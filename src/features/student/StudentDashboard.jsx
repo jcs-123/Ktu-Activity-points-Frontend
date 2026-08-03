@@ -179,7 +179,7 @@ const StudentDashboard = () => {
                       </Typography>
                     </Box>
                     <Chip
-                      label={claim.status.replace('_', ' ')}
+                      label={(claim.status || '').replace(/_/g, ' ')}
                       size="small"
                       sx={{
                         bgcolor: STATUS_COLORS[claim.status] || '#9E9E9E',

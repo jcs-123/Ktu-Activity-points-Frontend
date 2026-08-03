@@ -146,17 +146,21 @@ const MyReport = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {headBreakdown.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">No approved activity claims recorded yet.</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                headBreakdown.map((row) => (
-                  <TableRow key={row._id} hover>
+              {(() => {
+                const activeBreakdown = headBreakdown.filter(row => (row.rawPoints > 0 || row.countedPoints > 0));
+                if (activeBreakdown.length === 0) {
+                  return (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                        <Typography color="text.secondary">No approved activity claims recorded yet.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+                return activeBreakdown.map((row) => (
+                  <TableRow key={row._id || row.activityHead?._id} hover>
                     <TableCell>
-                      {row.activityHead?.group?.code} - {row.activityHead?.group?.name}
+                      Group {row.activityHead?.group?.code || 'I'} — {row.activityHead?.group?.name || ''}
                     </TableCell>
                     <TableCell>
                       {row.activityHead?.code} - {row.activityHead?.name}
@@ -169,8 +173,8 @@ const MyReport = () => {
                       {row.activityHead?.maxPoints}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+                ));
+              })()}
             </TableBody>
           </Table>
         </TableContainer>
