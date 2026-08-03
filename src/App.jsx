@@ -22,6 +22,7 @@ import Leaderboard from './features/report/Leaderboard';
 import DeficiencyReport from './features/report/DeficiencyReport';
 import ClassReport from './features/report/ClassReport';
 import PrincipalDashboard from './features/report/PrincipalDashboard';
+import AnalyticsPage from './features/report/AnalyticsPage';
 import NotificationList from './features/notification/NotificationList';
 
 // Layout
@@ -65,7 +66,7 @@ function App() {
                 <Route path="/reports/student/:id" element={<PlaceholderPage title="Student Report" />} />
                 <Route path="/reports/deficiency" element={<DeficiencyReport />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
-                <Route path="/analytics" element={<PlaceholderPage title="Analytics" />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
 
                 {/* Admin */}
                 <Route path="/admin/catalogue" element={<CatalogueAdmin />} />

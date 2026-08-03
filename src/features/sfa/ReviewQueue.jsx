@@ -96,7 +96,7 @@ const ReviewQueue = () => {
       </Box>
 
       {selected.length > 0 && (
-        <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.light', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.light', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Typography>{selected.length} claim(s) selected</Typography>
           <Button 
             variant="contained" 
