@@ -20,15 +20,21 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.roles = action.payload.roles || [];
       state.roleAssignments = action.payload.roleAssignments || [];
+      state.token = action.payload.token || null;
       state.isAuthenticated = true;
       state.isLoading = false;
+      if (action.payload.token) {
+        localStorage.setItem('accessToken', action.payload.token);
+      }
     },
     clearCredentials: (state) => {
       state.user = null;
       state.roles = [];
       state.roleAssignments = [];
+      state.token = null;
       state.isAuthenticated = false;
       state.isLoading = false;
+      localStorage.removeItem('accessToken');
     },
     setLoading: (state, action) => {
       state.isLoading = action.payload;

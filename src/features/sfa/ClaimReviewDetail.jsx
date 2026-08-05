@@ -210,6 +210,27 @@ const ClaimReviewDetail = () => {
             ) : (
               <Typography color="text.secondary">No proof files attached to this claim.</Typography>
             )}
+
+            {/* FR-D-04 Context Panel Alerts */}
+            {((claimResponse?.data?.possibleDuplicates?.length > 0) || (claimResponse?.data?.headScore?.countedPoints >= claimResponse?.data?.headScore?.maxPoints)) && (
+              <Box sx={{ mt: 3, p: 2, bgcolor: 'amber.50', border: '1px solid', borderColor: 'warning.light', borderRadius: 2 }}>
+                <Typography variant="subtitle2" fontWeight="bold" color="warning.dark" gutterBottom>
+                  ⚠️ Review Advisory & Context Alerts
+                </Typography>
+                
+                {claimResponse?.data?.possibleDuplicates?.length > 0 && (
+                  <Alert severity="warning" sx={{ mb: 1 }}>
+                    <strong>Participation / Winner Overlap Suspected (BR-09):</strong> Student has existing claims with matching title or date. Verify that both winning and participation points are not claimed.
+                  </Alert>
+                )}
+
+                {claimResponse?.data?.headScore?.countedPoints >= claimResponse?.data?.headScore?.maxPoints && (
+                  <Alert severity="info">
+                    <strong>Category Cap Reached (BR-06):</strong> Student has already earned {claimResponse?.data?.headScore?.countedPoints} of {claimResponse?.data?.headScore?.maxPoints} maximum points under this category.
+                  </Alert>
+                )}
+              </Box>
+            )}
           </Paper>
         </Grid>
 
