@@ -270,9 +270,33 @@ const ClaimReviewDetail = () => {
                   Reject Claim
                 </Button>
               </Box>
+            ) : claim.status === 'APPROVED' ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Alert severity="success" sx={{ mb: 1 }}>
+                  This claim is currently <strong>APPROVED</strong>. You can revert or reject it below if correction is required.
+                </Alert>
+                <Button 
+                  variant="outlined" 
+                  color="warning" 
+                  size="large"
+                  startIcon={<RevertIcon />}
+                  onClick={() => handleActionClick('REVERT')}
+                >
+                  Revert to Student
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  color="error" 
+                  size="large"
+                  startIcon={<RejectIcon />}
+                  onClick={() => handleActionClick('REJECT')}
+                >
+                  Reject Claim
+                </Button>
+              </Box>
             ) : (
-              <Alert severity={claim.status === 'APPROVED' ? 'success' : claim.status === 'REJECTED' ? 'error' : 'info'}>
-                This claim is currently <strong>{claim.status}</strong> and requires no further action from you.
+              <Alert severity={claim.status === 'REJECTED' ? 'error' : 'info'}>
+                This claim is currently <strong>{claim.status}</strong>.
               </Alert>
             )}
           </Paper>
@@ -321,21 +345,31 @@ const ClaimReviewDetail = () => {
       {/* Attachment Inline Viewer Dialog */}
       <Dialog open={viewerOpen} onClose={() => setViewerOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold' }}>Proof Certificate Preview</DialogTitle>
-        <DialogContent dividers sx={{ p: 0, height: '600px', display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: 'grey.900' }}>
-          {viewerType === 'application/pdf' ? (
-            <iframe
-              src={viewerUrl}
+        <DialogContent dividers sx={{ p: 0, height: '600px', width: '100%', bgcolor: 'grey.100', overflow: 'hidden' }}>
+          {viewerType === 'application/pdf' || viewerUrl.toLowerCase().includes('.pdf') ? (
+            <object
+              data={viewerUrl}
+              type="application/pdf"
               width="100%"
               height="100%"
               style={{ border: 'none' }}
-              title="Proof Preview"
-            />
+            >
+              <iframe
+                src={viewerUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+                title="Proof Certificate Preview"
+              />
+            </object>
           ) : (
-            <img
-              src={viewerUrl}
-              alt="Evidence Certificate"
-              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-            />
+            <Box sx={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: 'grey.900' }}>
+              <img
+                src={viewerUrl}
+                alt="Evidence Certificate"
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              />
+            </Box>
           )}
         </DialogContent>
         <DialogActions>

@@ -16,6 +16,7 @@ import {
 } from '@mui/icons-material';
 import { useLoginMutation } from '../../api/authApi';
 import { setCredentials } from './authSlice';
+import { claimApi } from '../../api/claimApi';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ const LoginPage = () => {
 
     try {
       const result = await login(formData).unwrap();
+      dispatch(claimApi.util.resetApiState());
       dispatch(setCredentials(result));
 
       // Redirect based on role
@@ -51,7 +53,7 @@ const LoginPage = () => {
         navigate('/principal/dashboard');
       } else if (result.roles.includes('SFA')) {
         navigate('/review');
-      } else if (result.roles.includes('HOD')) {
+      } else if (result.roles.includes('HOD') || result.roles.includes('FACULTY')) {
         navigate('/reports/deficiency');
       } else {
         navigate('/dashboard');

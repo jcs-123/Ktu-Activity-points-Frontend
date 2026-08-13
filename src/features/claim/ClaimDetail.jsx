@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Box, Typography, Paper, CircularProgress, Chip, 
-  Divider, Button, Grid, Dialog, DialogTitle, DialogContent, IconButton
+import {
+  Box, Typography, Paper, CircularProgress, Chip,
+  Divider, Button, Grid, Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
+  Snackbar, Alert
 } from '@mui/material';
-import { 
-  ArrowBack as ArrowBackIcon, 
+import {
+  ArrowBack as ArrowBackIcon,
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Cancel as CancelIcon,
@@ -64,12 +65,20 @@ const ClaimDetail = () => {
     }
   };
 
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [submitSuccessModal, setSubmitSuccessModal] = useState(false);
+
   const handleSubmit = async () => {
     try {
       await submitClaim(id).unwrap();
+      setSubmitSuccessModal(true);
       refetch();
     } catch (err) {
-      console.error('Failed to submit claim:', err);
+      setSnackbar({
+        open: true,
+        message: err?.data?.error?.message || 'Failed to submit claim.',
+        severity: 'error'
+      });
     }
   };
 
@@ -112,14 +121,14 @@ const ClaimDetail = () => {
               Ref: {claim.claimRef} • Version: v{claim.version || 1}
             </Typography>
           </Box>
-          <Chip 
-            label={claim.status.replace('_', ' ')} 
-            sx={{ 
+          <Chip
+            label={claim.status.replace('_', ' ')}
+            sx={{
               bgcolor: STATUS_COLORS[claim.status] || '#9E9E9E',
               color: 'white',
               fontWeight: 'bold',
               px: 1
-            }} 
+            }}
           />
         </Box>
 
@@ -141,10 +150,10 @@ const ClaimDetail = () => {
                 <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.heic" onChange={handleFileUpload} />
               </Button>
 
-              <Button 
-                variant="contained" 
-                color="warning" 
-                onClick={handleSubmit} 
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 sx={{ fontWeight: 'bold' }}
               >
@@ -155,19 +164,59 @@ const ClaimDetail = () => {
         )}
 
         {claim.status === 'DRAFT' && (
-          <Box sx={{ mb: 3, p: 2, bgcolor: 'warning.light', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white' }}>
-            <Typography variant="body1">
-              This claim is currently a DRAFT. It will not be reviewed until you submit it.
+          <Box sx={{ mb: 3, p: 2.5, bgcolor: '#FFF3E0', border: '1.5px solid #FF9800', borderRadius: 2 }}>
+            <Typography variant="subtitle1" fontWeight="bold" color="warning.dark" gutterBottom>
+              📝 Draft Claim
             </Typography>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleSubmit} 
-              disabled={isSubmitting}
-              sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
-            >
-              {isSubmitting ? <CircularProgress size={24} /> : 'Confirm & Submit Claim'}
-            </Button>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This claim is saved as a Draft. Attach your proof documents below and click <strong>Confirm & Submit Claim</strong> when ready.
+            </Typography>
+
+            {/* Display list of uploaded proof files right inside the Draft box */}
+            {attachments.length > 0 && (
+              <Box sx={{ mb: 2, p: 1.5, bgcolor: 'white', borderRadius: 1.5, border: '1px solid #FFE0B2' }}>
+                <Typography variant="caption" fontWeight="bold" color="success.dark" sx={{ display: 'block', mb: 1 }}>
+                  ✅ Attached Proof Documents ({attachments.length}):
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  {attachments.map(att => (
+                    <Paper key={att._id} variant="outlined" sx={{ px: 1.5, py: 0.8, display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#F9F9F9' }}>
+                      <FileIcon fontSize="small" color="primary" />
+                      <Typography variant="body2" fontWeight="medium">{att.originalFilename}</Typography>
+                      <Button
+                        size="small"
+                        sx={{ ml: 1, py: 0, minWidth: 'auto', fontSize: '0.75rem' }}
+                        onClick={() => handleViewAttachment(att._id, att.mimeType)}
+                      >
+                        View
+                      </Button>
+                    </Paper>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Button
+                variant="outlined"
+                component="label"
+                color="warning"
+                disabled={isUploading}
+              >
+                {isUploading ? 'Uploading...' : attachments.length > 0 ? '+ Add More Proof' : 'Upload Proof Certificate'}
+                <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png,.heic" onChange={handleFileUpload} />
+              </Button>
+
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                sx={{ fontWeight: 'bold' }}
+              >
+                {isSubmitting ? <CircularProgress size={24} /> : 'Confirm & Submit Claim'}
+              </Button>
+            </Box>
           </Box>
         )}
 
@@ -189,7 +238,7 @@ const ClaimDetail = () => {
           <Box>
             <Typography variant="body2" color="text.secondary">Date</Typography>
             <Typography variant="body1" fontWeight="medium">
-              {claim.activityDateFrom ? new Date(claim.activityDateFrom).toLocaleDateString() : 'N/A'} 
+              {claim.activityDateFrom ? new Date(claim.activityDateFrom).toLocaleDateString() : 'N/A'}
               {claim.activityDateTo ? ` - ${new Date(claim.activityDateTo).toLocaleDateString()}` : ''}
             </Typography>
           </Box>
@@ -248,9 +297,9 @@ const ClaimDetail = () => {
               {index !== timeline.length - 1 && (
                 <Box sx={{ position: 'absolute', left: '11px', top: '24px', bottom: '-24px', width: '2px', bgcolor: 'grey.300' }} />
               )}
-              <Box sx={{ 
-                width: 24, height: 24, borderRadius: '50%', 
-                bgcolor: STATUS_COLORS[event.toStatus] || 'primary.main', 
+              <Box sx={{
+                width: 24, height: 24, borderRadius: '50%',
+                bgcolor: STATUS_COLORS[event.toStatus] || 'primary.main',
                 mr: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'white', zIndex: 1
               }}>
@@ -261,7 +310,7 @@ const ClaimDetail = () => {
                   {event.toStatus.replace('_', ' ')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" display="block">
-                  {new Date(event.createdAt).toLocaleString()} 
+                  {new Date(event.createdAt).toLocaleString()}
                   {event.actor?.fullName && ` • by ${event.actor.fullName}`}
                 </Typography>
                 {event.remarks && (
@@ -278,8 +327,8 @@ const ClaimDetail = () => {
       </Paper>
 
       {/* Attachment Viewer Dialog */}
-      <Dialog 
-        open={viewerOpen} 
+      <Dialog
+        open={viewerOpen}
         onClose={() => setViewerOpen(false)}
         maxWidth="lg"
         fullWidth
@@ -305,6 +354,60 @@ const ClaimDetail = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Submission Success Interactive Pop-up Modal */}
+      <Dialog
+        open={submitSuccessModal}
+        onClose={() => setSubmitSuccessModal(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3, p: 1, textAlign: 'center' }
+        }}
+      >
+        <DialogTitle sx={{ pt: 3 }}>
+          <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 1 }} />
+          <Typography variant="h5" fontWeight="bold">
+            Claim Submitted! 🚀
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+            Your activity claim <strong>({claim?.claimRef})</strong> has been successfully submitted.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            It is now pending review by your Staff Advisor (SFA). You will receive a notification once reviewed.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 3, px: 3 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            onClick={() => setSubmitSuccessModal(false)}
+            sx={{ fontWeight: 'bold', borderRadius: 2 }}
+          >
+            Got it, Thank You!
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Error Toast Notification */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%', fontWeight: 'bold' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

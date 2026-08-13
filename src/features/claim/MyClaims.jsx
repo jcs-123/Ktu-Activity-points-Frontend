@@ -99,7 +99,20 @@ const MyClaims = () => {
                   <TableCell>
                     {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : '—'}
                   </TableCell>
-                  <TableCell>{claim.claimedPoints}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" fontWeight="bold">{claim.claimedPoints} pts</Typography>
+                      {claim.activityOption?.item?.head?.maxPoints && claim.claimedPoints >= claim.activityOption.item.head.maxPoints && (
+                        <Chip
+                          label={`CAPPED @ ${claim.activityOption.item.head.maxPoints}`}
+                          color="warning"
+                          size="small"
+                          sx={{ fontWeight: 'bold', fontSize: '0.68rem', height: 20 }}
+                          title={`Exceeds max allowable cap of ${claim.activityOption.item.head.maxPoints} pts for this category`}
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Chip 
                       label={(claim.status || '').replace(/_/g, ' ')} 

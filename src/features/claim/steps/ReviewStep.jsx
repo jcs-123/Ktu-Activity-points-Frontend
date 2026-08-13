@@ -5,24 +5,44 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { setStep } from '../claimWizardSlice';
 import { Button } from '@mui/material';
+import { Alert } from '@mui/material';
 
 const ReviewStep = () => {
   const dispatch = useDispatch();
-  const { catalogueItem, details, attachments } = useSelector((state) => state.claimWizard);
+  const { catalogueItem, details, attachments, warnings } = useSelector((state) => state.claimWizard);
 
   const handleEdit = (stepIndex) => {
     dispatch(setStep(stepIndex));
   };
+
+  const isExceedingCap = catalogueItem?.maxPoints && Number(details.pointsClaimed) >= Number(catalogueItem.maxPoints);
 
   return (
     <Box sx={{ maxWidth: 700, mx: 'auto', mt: 2 }}>
       <Typography variant="h6" gutterBottom color="primary">
         Review Your Claim
       </Typography>
-      
+
       <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
         Please review the details below. Ensure all information is accurate before submitting.
       </Typography>
+
+      {/* Real-time Server & Client CAP Advisory Warnings */}
+      {(isExceedingCap || (warnings && warnings.length > 0)) && (
+        <Box sx={{ mb: 3 }}>
+          {warnings && warnings.length > 0 ? (
+            warnings.map((warn, i) => (
+              <Alert key={i} severity="warning" sx={{ mb: 1.5, borderRadius: 2, fontWeight: 'bold' }}>
+                ⚠️ CAP Alert: {warn}
+              </Alert>
+            ))
+          ) : (
+            <Alert severity="warning" sx={{ borderRadius: 2, fontWeight: 'bold' }}>
+              ⚠️ Category CAP Warning: Points claimed ({details.pointsClaimed} pts) equal or exceed the category cap of {catalogueItem.maxPoints} pts ({catalogueItem.title}). Any points awarded beyond {catalogueItem.maxPoints} will be capped according to KTU rules.
+            </Alert>
+          )}
+        </Box>
+      )}
 
       <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -30,7 +50,7 @@ const ReviewStep = () => {
           <Button size="small" onClick={() => handleEdit(0)}>Edit</Button>
         </Box>
         <Divider sx={{ mb: 2 }} />
-        
+
         {catalogueItem ? (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
             <Box>
@@ -53,7 +73,7 @@ const ReviewStep = () => {
           <Button size="small" onClick={() => handleEdit(1)}>Edit</Button>
         </Box>
         <Divider sx={{ mb: 2 }} />
-        
+
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
           <Box sx={{ gridColumn: '1 / -1' }}>
             <Typography variant="body2" color="textSecondary">Title / Name of Event</Typography>
@@ -71,7 +91,7 @@ const ReviewStep = () => {
             <Typography variant="body2" color="textSecondary">Description</Typography>
             <Typography variant="body1">{details.description || '—'}</Typography>
           </Box>
-          
+
           {catalogueItem?.pointsPerUnit > 0 && (
             <Box>
               <Typography variant="body2" color="textSecondary">{catalogueItem.unitLabel || 'Units'}</Typography>
@@ -94,7 +114,7 @@ const ReviewStep = () => {
           <Button size="small" onClick={() => handleEdit(2)}>Edit</Button>
         </Box>
         <Divider sx={{ mb: 2 }} />
-        
+
         {attachments && attachments.length > 0 ? (
           <List dense>
             {attachments.map((file, idx) => (
@@ -102,9 +122,9 @@ const ReviewStep = () => {
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <InsertDriveFileIcon color="action" />
                 </ListItemIcon>
-                <ListItemText 
-                  primary={file.name} 
-                  secondary={`${(file.size / 1024 / 1024).toFixed(2)} MB`} 
+                <ListItemText
+                  primary={file.name}
+                  secondary={`${(file.size / 1024 / 1024).toFixed(2)} MB`}
                 />
               </ListItem>
             ))}
@@ -115,7 +135,7 @@ const ReviewStep = () => {
           </Typography>
         )}
       </Paper>
-      
+
       <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: 'rgba(76, 175, 80, 0.1)', borderRadius: 2 }}>
         <CheckCircleOutlineIcon color="success" sx={{ mr: 2 }} />
         <Typography variant="body2" color="textPrimary">

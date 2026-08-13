@@ -7,11 +7,12 @@ import {
 } from '@mui/material';
 import {
   PersonAdd, Upload, CheckCircle, Error, Group, AdminPanelSettings,
-  School, ManageAccounts
+  School, ManageAccounts, Edit as EditIcon
 } from '@mui/icons-material';
 import {
   useGetUsersQuery,
   useCreateUserMutation,
+  useUpdateUserMutation,
   useBulkImportStudentsMutation,
   useGetClassesQuery
 } from '../../api/adminApi';
@@ -19,6 +20,7 @@ import {
 const UserAdmin = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [createError, setCreateError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -31,7 +33,21 @@ const UserAdmin = () => {
     admissionDate: '2021-08-16',
     gender: 'MALE',
   });
-  
+
+  // Edit User State
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editError, setEditError] = useState('');
+  const [editFormData, setEditFormData] = useState({
+    fullName: '',
+    email: '',
+    mobile: '',
+    userType: 'STUDENT',
+    status: 'ACTIVE',
+    category: 'REGULAR',
+    classId: '',
+  });
+
   const [csvString, setCsvString] = useState('');
   const [csvError, setCsvError] = useState('');
   const [importResult, setImportResult] = useState(null);
@@ -42,16 +58,63 @@ const UserAdmin = () => {
   });
   const { data: classesData } = useGetClassesQuery();
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
+  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [bulkImport, { isLoading: isImporting }] = useBulkImportStudentsMutation();
 
   const users = usersData?.data || [];
   const classes = classesData?.data || [];
+
+  const handleOpenEdit = (user) => {
+    setEditingUser(user);
+    setEditError('');
+    setEditFormData({
+      fullName: user.fullName || '',
+      email: user.email || '',
+      mobile: user.mobile || '',
+      userType: user.userType || 'STUDENT',
+      status: user.status || 'ACTIVE',
+      category: user.studentProfile?.category || 'REGULAR',
+      classId: user.studentProfile?.class?._id || user.studentProfile?.class || '',
+    });
+    setOpenEditDialog(true);
+  };
+
+  const handleEditFormChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateUserSubmit = async () => {
+    setEditError('');
+    if (!editFormData.fullName || !editFormData.email) {
+      setEditError('Full Name and Email are required.');
+      return;
+    }
+    try {
+      await updateUser({
+        id: editingUser._id,
+        ...editFormData,
+      }).unwrap();
+      setOpenEditDialog(false);
+      setEditingUser(null);
+    } catch (err) {
+      setEditError(err.data?.error?.message || err.data?.message || 'Failed to update user account.');
+    }
+  };
 
   const handleFormChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleCreateUserSubmit = async () => {
+    setCreateError('');
+    if (!formData.username || !formData.email || !formData.password || !formData.fullName) {
+      setCreateError('Username, Full Name, Email, and Password are required.');
+      return;
+    }
+    if (formData.userType === 'STUDENT' && !formData.classId) {
+      setCreateError('Please select a Class for the student account.');
+      return;
+    }
     try {
       await createUser(formData).unwrap();
       setOpenCreateDialog(false);
@@ -69,7 +132,7 @@ const UserAdmin = () => {
         gender: 'MALE',
       });
     } catch (err) {
-      console.error(err);
+      setCreateError(err.data?.error?.message || err.data?.message || 'Failed to create user account.');
     }
   };
 
@@ -116,7 +179,7 @@ const UserAdmin = () => {
             </Typography>
           </Box>
         </Box>
-        
+
         <Button
           variant="contained"
           startIcon={<PersonAdd />}
@@ -137,13 +200,13 @@ const UserAdmin = () => {
 
       {/* TAB 0: All Accounts list */}
       {activeTab === 0 && (
-        <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
+        <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, overflowX: 'auto', width: '100%' }}>
           {isLoadingUsers ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress />
             </Box>
           ) : (
-            <Table>
+            <Table sx={{ minWidth: 650 }}>
               <TableHead sx={{ backgroundColor: 'primary.main' }}>
                 <TableRow>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
@@ -151,12 +214,13 @@ const UserAdmin = () => {
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Role Type</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                       No user accounts found.
                     </TableCell>
                   </TableRow>
@@ -167,7 +231,18 @@ const UserAdmin = () => {
                         <Avatar sx={{ bgcolor: 'secondary.main', width: 32, height: 32, fontSize: 14 }}>
                           {user.fullName.charAt(0)}
                         </Avatar>
-                        <Typography variant="body2" fontWeight="bold">{user.fullName}</Typography>
+                        <Box>
+                          <Typography variant="body2" fontWeight="bold">{user.fullName}</Typography>
+                          {user.userType === 'STUDENT' && user.studentProfile?.category && (
+                            <Chip
+                              label={user.studentProfile.category}
+                              size="small"
+                              variant="outlined"
+                              color={user.studentProfile.category === 'LATERAL_ENTRY' ? 'secondary' : 'default'}
+                              sx={{ height: 18, fontSize: '0.65rem' }}
+                            />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.email}</TableCell>
@@ -186,6 +261,16 @@ const UserAdmin = () => {
                           color={user.status === 'ACTIVE' ? 'success' : 'warning'}
                           variant="outlined"
                         />
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleOpenEdit(user)}
+                          title="Edit User"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))
@@ -299,6 +384,7 @@ const UserAdmin = () => {
       <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold' }}>Create User Account</DialogTitle>
         <DialogContent dividers>
+          {createError && <Alert severity="error" sx={{ mb: 2 }}>{createError}</Alert>}
           <Grid container spacing={2.5}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -431,6 +517,119 @@ const UserAdmin = () => {
           <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
           <Button variant="contained" disabled={isCreating} onClick={handleCreateUserSubmit}>
             {isCreating ? <CircularProgress size={24} /> : 'Save User'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* EDIT USER DIALOG */}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>
+          Edit User Account ({editingUser?.username})
+        </DialogTitle>
+        <DialogContent dividers>
+          {editError && <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>}
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Full Name"
+                name="fullName"
+                value={editFormData.fullName}
+                onChange={handleEditFormChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={editFormData.email}
+                onChange={handleEditFormChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Mobile"
+                name="mobile"
+                value={editFormData.mobile}
+                onChange={handleEditFormChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>User Type</InputLabel>
+                <Select
+                  name="userType"
+                  value={editFormData.userType}
+                  label="User Type"
+                  onChange={handleEditFormChange}
+                >
+                  <MenuItem value="STUDENT">Student</MenuItem>
+                  <MenuItem value="FACULTY">Faculty</MenuItem>
+                  <MenuItem value="ADMIN">Admin</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  name="status"
+                  value={editFormData.status}
+                  label="Status"
+                  onChange={handleEditFormChange}
+                >
+                  <MenuItem value="ACTIVE">Active</MenuItem>
+                  <MenuItem value="INACTIVE">Inactive</MenuItem>
+                  <MenuItem value="SUSPENDED">Suspended</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {editFormData.userType === 'STUDENT' && (
+              <>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Class</InputLabel>
+                    <Select
+                      name="classId"
+                      value={editFormData.classId}
+                      label="Class"
+                      onChange={handleEditFormChange}
+                    >
+                      {classes.map((c) => (
+                        <MenuItem key={c._id} value={c._id}>
+                          {c.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      name="category"
+                      value={editFormData.category}
+                      label="Category"
+                      onChange={handleEditFormChange}
+                    >
+                      <MenuItem value="REGULAR">Regular (120 Pts)</MenuItem>
+                      <MenuItem value="LATERAL_ENTRY">Lateral Entry (90 Pts)</MenuItem>
+                      <MenuItem value="PWD">PwD (60 Pts)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+          <Button variant="contained" disabled={isUpdating} onClick={handleUpdateUserSubmit}>
+            {isUpdating ? <CircularProgress size={24} /> : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

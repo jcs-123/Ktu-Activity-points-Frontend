@@ -43,11 +43,14 @@ const DeficiencyReport = () => {
   const handleExportCSV = () => {
     if (!report || report.length === 0) return;
 
-    const headers = ['Student Name', 'Admission No', 'Category', 'Target Points', 'Earned Points', 'Deficit', 'Status'];
+    const headers = ['Student Name', 'Admission No', 'Category', 'Group I Pts', 'Group II Pts', 'Group III Pts', 'Target Points', 'Earned Points', 'Deficit', 'Status'];
     const rows = report.map(s => [
       `"${s.name}"`,
       `"${s.admissionNo}"`,
       s.category || 'REGULAR',
+      s.group1Points || 0,
+      s.group2Points || 0,
+      s.group3Points || 0,
       s.requiredPoints,
       s.totalPoints,
       s.deficit || 0,
@@ -164,13 +167,16 @@ const DeficiencyReport = () => {
           )}
 
           {/* Printable Report Table */}
-          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
-            <Table>
+          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, overflowX: 'auto', width: '100%' }}>
+            <Table sx={{ minWidth: 720 }}>
               <TableHead sx={{ backgroundColor: 'error.main' }}>
                 <TableRow>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Student Name</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Admission No</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Category</TableCell>
+                  <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>Grp I</TableCell>
+                  <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>Grp II</TableCell>
+                  <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>Grp III</TableCell>
                   <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>Target</TableCell>
                   <TableCell align="center" sx={{ color: 'white', fontWeight: 'bold' }}>Earned</TableCell>
                   <TableCell align="right" sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
@@ -179,7 +185,7 @@ const DeficiencyReport = () => {
               <TableBody>
                 {report.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                       No students found in this class.
                     </TableCell>
                   </TableRow>
@@ -191,6 +197,30 @@ const DeficiencyReport = () => {
                       </TableCell>
                       <TableCell>{student.admissionNo}</TableCell>
                       <TableCell>{student.category || 'REGULAR'}</TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          label={student.group1Points || 0}
+                          size="small"
+                          variant="outlined"
+                          color={student.group1Points >= (student.requiredPerGroup || 40) ? 'success' : 'error'}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          label={student.group2Points || 0}
+                          size="small"
+                          variant="outlined"
+                          color={student.group2Points >= (student.requiredPerGroup || 40) ? 'success' : 'error'}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          label={student.group3Points || 0}
+                          size="small"
+                          variant="outlined"
+                          color={student.group3Points >= (student.requiredPerGroup || 40) ? 'success' : 'error'}
+                        />
+                      </TableCell>
                       <TableCell align="center">{student.requiredPoints}</TableCell>
                       <TableCell align="center">
                         <Typography

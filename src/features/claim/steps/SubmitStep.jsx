@@ -23,16 +23,32 @@ const SubmitStep = () => {
 
   // If mutation hasn't started yet, show a confirmation screen
   if (!isLoading && !isSuccess && !isError) {
+    const hasAttachments = attachments && attachments.length > 0;
+
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4, mb: 4 }}>
         <Typography variant="h6" gutterBottom>Ready to Submit?</Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 4, textAlign: 'center' }}>
-          Your claim is ready. Click the button below to submit it to the system.
-        </Typography>
+        
+        {!hasAttachments ? (
+          <Paper sx={{ p: 3, mb: 3, bgcolor: '#FFEBEE', border: '1px solid #FFCDD2', borderRadius: 2, textAlign: 'center', maxWidth: 450 }}>
+            <Typography variant="body1" color="error" fontWeight="bold" gutterBottom>
+              ⚠️ Proof Document Required
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              At least one proof certificate or evidence document is required before submitting your claim. Please go back to the <strong>Attachments</strong> step and upload your document.
+            </Typography>
+          </Paper>
+        ) : (
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 4, textAlign: 'center' }}>
+            Your claim with <strong>{attachments.length} attached proof file(s)</strong> is ready. Click below to submit.
+          </Typography>
+        )}
+
         <Button 
           variant="contained" 
           color="primary" 
           size="large" 
+          disabled={!hasAttachments}
           onClick={handleConfirmSubmit}
         >
           Confirm & Submit Claim

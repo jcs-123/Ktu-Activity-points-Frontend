@@ -12,12 +12,14 @@ import { useGetReviewQueueQuery, useBulkApproveMutation } from '../../api/review
 const STATUS_COLORS = {
   SUBMITTED: '#2196F3',
   UNDER_REVIEW: '#FF9800',
+  APPROVED: '#4CAF50',
+  REJECTED: '#F44336',
   REVERTED: '#FF5722',
 };
 
 const ReviewQueue = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = useState('ACTIONABLE'); // ACTIONABLE or ALL
+  const [tab, setTab] = useState('ACTIONABLE'); // ACTIONABLE, APPROVED, REJECTED, or ALL
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selected, setSelected] = useState([]);
@@ -25,7 +27,9 @@ const ReviewQueue = () => {
   const queryParams = {
     page: page + 1,
     per_page: rowsPerPage,
-    ...(tab === 'ACTIONABLE' ? { status: 'SUBMITTED,UNDER_REVIEW' } : {})
+    ...(tab === 'ACTIONABLE' ? { status: 'SUBMITTED,UNDER_REVIEW' } : 
+       tab === 'APPROVED' ? { status: 'APPROVED' } :
+       tab === 'REJECTED' ? { status: 'REJECTED,REVERTED' } : {})
   };
 
   const { data, isLoading, isError, refetch } = useGetReviewQueueQuery(queryParams);
@@ -90,8 +94,10 @@ const ReviewQueue = () => {
       
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tab} onChange={(e, v) => { setTab(v); setPage(0); setSelected([]); }}>
-          <Tab label="Actionable" value="ACTIONABLE" />
-          <Tab label="All Claims" value="ALL" />
+          <Tab label="Pending Review" value="ACTIONABLE" />
+          <Tab label="Approved Claims" value="APPROVED" />
+          <Tab label="Rejected / Reverted" value="REJECTED" />
+          <Tab label="All Submissions" value="ALL" />
         </Tabs>
       </Box>
 

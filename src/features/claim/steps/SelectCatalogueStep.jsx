@@ -60,11 +60,13 @@ const SelectCatalogueStep = () => {
     const val = e.target.value;
     setOptionId(val);
     const selectedOpt = options?.find(o => o._id === val);
+    const selectedItm = items?.find(i => i._id === itemId);
     if (selectedOpt) {
       dispatch(setCatalogueItem({
         groupId,
         headId,
         itemId,
+        itemCode: selectedItm?.code,
         optionId: val,
         title: selectedOpt.label || selectedOpt.name,
         maxPoints: selectedOpt.points ?? selectedOpt.maxPoints,
@@ -83,6 +85,7 @@ const SelectCatalogueStep = () => {
           groupId,
           headId,
           itemId,
+          itemCode: selectedItm?.code,
           optionId: null,
           title: selectedItm.title || selectedItm.name,
           maxPoints: selectedItm.maxPoints,

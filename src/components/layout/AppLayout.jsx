@@ -22,10 +22,11 @@ import {
 import { selectCurrentUser, selectUserRoles, clearCredentials } from '../../features/auth/authSlice';
 import { useLogoutMutation } from '../../api/authApi';
 import { useGetNotificationsQuery } from '../../api/notificationApi';
+import { claimApi } from '../../api/claimApi';
 
 const DRAWER_WIDTH = 260;
 
-const getNavItems = (roles) => {
+const getNavItems = (roles = []) => {
   const items = [];
 
   // Student items
@@ -137,6 +138,7 @@ const AppLayout = () => {
     } catch {
       // Logout even if API call fails
     }
+    dispatch(claimApi.util.resetApiState());
     dispatch(clearCredentials());
     navigate('/login');
   };
@@ -209,7 +211,9 @@ const AppLayout = () => {
                 </ListItemIcon>
                 <ListItemText
                   primary={item.label}
-                  primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: isActive ? 600 : 400 }}
+                  slotProps={{
+                    primary: { fontSize: '0.875rem', fontWeight: isActive ? 600 : 400 }
+                  }}
                 />
               </ListItemButton>
             </ListItem>

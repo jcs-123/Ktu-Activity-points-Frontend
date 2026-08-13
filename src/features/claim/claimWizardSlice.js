@@ -13,6 +13,7 @@ const initialState = {
     pointsClaimed: '',
   },
   attachments: [],
+  warnings: [],
   isSubmitting: false,
   error: null,
 };
@@ -47,6 +48,9 @@ const claimWizardSlice = createSlice({
     removeAttachment: (state, action) => {
       state.attachments = state.attachments.filter((_, index) => index !== action.payload);
     },
+    setWarnings: (state, action) => {
+      state.warnings = action.payload || [];
+    },
     resetWizard: (state) => {
       return initialState;
     },
@@ -62,6 +66,7 @@ export const {
   updateDetails,
   addAttachment,
   removeAttachment,
+  setWarnings,
   resetWizard,
 } = claimWizardSlice.actions;
 
