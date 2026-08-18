@@ -7,14 +7,17 @@ import {
 } from '@mui/material';
 import {
   PersonAdd, Upload, CheckCircle, Error, Group, AdminPanelSettings,
-  School, ManageAccounts, Edit as EditIcon
+  School, ManageAccounts, Edit as EditIcon, Badge as BadgeIcon, Add as AddIcon
 } from '@mui/icons-material';
 import {
   useGetUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
   useBulkImportStudentsMutation,
-  useGetClassesQuery
+  useGetClassesQuery,
+  useGetDepartmentsQuery,
+  useGetRoleAssignmentsQuery,
+  useCreateRoleAssignmentMutation
 } from '../../api/adminApi';
 
 const UserAdmin = () => {
@@ -48,21 +51,78 @@ const UserAdmin = () => {
     classId: '',
   });
 
+  // Role Assignment State (Assign SFA / HOD)
+  const [openRoleDialog, setOpenRoleDialog] = useState(false);
+  const [roleError, setRoleError] = useState('');
+  const [selectedRoleDeptFilter, setSelectedRoleDeptFilter] = useState('');
+  const [roleFormData, setRoleFormData] = useState({
+    userId: '',
+    role: 'SFA',
+    scopeType: 'CLASS',
+    scopeId: '',
+  });
+
+  const [selectedImportClassId, setSelectedImportClassId] = useState('');
   const [csvString, setCsvString] = useState('');
   const [csvError, setCsvError] = useState('');
   const [importResult, setImportResult] = useState(null);
 
+  const handleDownloadSampleCSV = () => {
+    const csvContent = `admissionno,fullname,email,mobile,category,admissiondate,gender
+TVE21CS001,Rahul Sharma,rahul.cs21@college.edu,9876543210,REGULAR,2021-08-16,MALE
+TVE21CS002,Anaya Ramesh,anaya.cs21@college.edu,9876543211,LATERAL_ENTRY,2022-08-16,FEMALE
+TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMALE`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'students_import_sample.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Queries & Mutations
   const { data: usersData, isLoading: isLoadingUsers } = useGetUsersQuery({
-    limit: 50,
+    limit: 100,
   });
   const { data: classesData } = useGetClassesQuery();
+  const { data: departmentsData } = useGetDepartmentsQuery();
+  const { data: roleAssignmentsData, isLoading: isLoadingRoles } = useGetRoleAssignmentsQuery();
+
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [bulkImport, { isLoading: isImporting }] = useBulkImportStudentsMutation();
+  const [createRoleAssignment, { isLoading: isAssigningRole }] = useCreateRoleAssignmentMutation();
 
   const users = usersData?.data || [];
   const classes = classesData?.data || [];
+  const departments = departmentsData?.data || [];
+  const roleAssignments = roleAssignmentsData?.data || [];
+
+  const filteredRoleAssignments = roleAssignments.filter(assignment => {
+    if (!selectedRoleDeptFilter) return true;
+    return (assignment.departmentName || '').toLowerCase().includes(selectedRoleDeptFilter.toLowerCase());
+  });
+
+  const handleRoleAssignSubmit = async () => {
+    setRoleError('');
+    if (!roleFormData.userId || !roleFormData.role || !roleFormData.scopeType) {
+      setRoleError('User, Role, and Scope Type are required.');
+      return;
+    }
+    if (roleFormData.scopeType !== 'INSTITUTION' && !roleFormData.scopeId) {
+      setRoleError('Please select a Target Scope (Class or Department).');
+      return;
+    }
+    try {
+      await createRoleAssignment(roleFormData).unwrap();
+      setOpenRoleDialog(false);
+      setRoleFormData({ userId: '', role: 'SFA', scopeType: 'CLASS', scopeId: '' });
+    } catch (err) {
+      setRoleError(err.data?.error?.message || err.data?.message || 'Failed to assign role.');
+    }
+  };
 
   const handleOpenEdit = (user) => {
     setEditingUser(user);
@@ -158,7 +218,7 @@ const UserAdmin = () => {
       return;
     }
     try {
-      const res = await bulkImport({ csvData: csvString, dryRun }).unwrap();
+      const res = await bulkImport({ csvData: csvString, dryRun, targetClassId: selectedImportClassId }).unwrap();
       setImportResult(res.data);
     } catch (err) {
       setCsvError(err.data?.error?.message || 'Bulk import failed.');
@@ -194,6 +254,7 @@ const UserAdmin = () => {
       <Paper elevation={0} sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)}>
           <Tab icon={<Group />} iconPosition="start" label="All Accounts" />
+          <Tab icon={<BadgeIcon />} iconPosition="start" label="Assign SFA / HOD Roles" />
           <Tab icon={<Upload />} iconPosition="start" label="Bulk Import CSV" />
         </Tabs>
       </Paper>
@@ -281,14 +342,139 @@ const UserAdmin = () => {
         </TableContainer>
       )}
 
-      {/* TAB 1: Bulk CSV Upload */}
+      {/* TAB 1: Role Assignments (Assign SFA / HOD) */}
       {activeTab === 1 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+            <Typography variant="h6" fontWeight="bold">
+              Active Role Assignments (SFA, HOD, Principal)
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <FormControl size="small" sx={{ minWidth: 220 }}>
+                <InputLabel>Filter by Department</InputLabel>
+                <Select
+                  value={selectedRoleDeptFilter}
+                  label="Filter by Department"
+                  onChange={(e) => setSelectedRoleDeptFilter(e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>All Departments</em>
+                  </MenuItem>
+                  {departments.map((d) => (
+                    <MenuItem key={d._id} value={d.name}>
+                      {d.name} ({d.code})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenRoleDialog(true)}
+                sx={{ borderRadius: 2 }}
+              >
+                Assign Role to Faculty
+              </Button>
+            </Box>
+          </Box>
+
+          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, overflowX: 'auto', width: '100%' }}>
+            {isLoadingRoles ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Table sx={{ minWidth: 650 }}>
+                <TableHead sx={{ backgroundColor: 'secondary.main' }}>
+                  <TableRow>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Faculty Member</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Assigned Role</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Department</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Scope Type</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Target Class / Scope</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Assigned Date</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredRoleAssignments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                        No SFA or HOD role assignments configured for this selection.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRoleAssignments.map((assignment) => (
+                      <TableRow key={assignment._id} hover>
+                        <TableCell sx={{ fontWeight: 'bold' }}>
+                          {assignment.user?.fullName || 'User'} ({assignment.user?.username})
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={assignment.role}
+                            size="small"
+                            color={assignment.role === 'SFA' ? 'primary' : assignment.role === 'HOD' ? 'secondary' : 'default'}
+                            sx={{ fontWeight: 'bold' }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 500 }}>
+                          {assignment.departmentName || 'All Departments'}
+                        </TableCell>
+                        <TableCell>{assignment.scopeType}</TableCell>
+                        <TableCell>
+                          {assignment.targetName || assignment.scopeId?.name || assignment.scopeId?.code || 'Institution-wide'}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(assignment.validFrom || assignment.createdAt).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </TableContainer>
+        </Box>
+      )}
+
+      {/* TAB 2: Bulk CSV Upload */}
+      {activeTab === 2 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Alert severity="info" sx={{ borderRadius: 2 }}>
-            <strong>CSV File Requirements:</strong> The CSV file must contain a header row with the following column names exactly:
-            <br />
-            <code>admissionNo, fullName, email, mobile, classId, category, admissionDate, gender</code>
+            <strong>Bulk Import Options:</strong> You can select a <strong>Target Class</strong> below to assign all imported students to that class automatically (no <code>classId</code> column needed in CSV!). Or include <code>className</code> / <code>classId</code> in your CSV file.
           </Alert>
+
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <FormControl sx={{ minWidth: 280 }} size="small">
+              <InputLabel>Target Class (Assign All Students)</InputLabel>
+              <Select
+                value={selectedImportClassId}
+                label="Target Class (Assign All Students)"
+                onChange={(e) => setSelectedImportClassId(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>None (Determine class from CSV file)</em>
+                </MenuItem>
+                {classes.map((c) => (
+                  <MenuItem key={c._id} value={c._id}>
+                    {c.name} ({c.department?.code || 'Dept'})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<Upload />}
+              onClick={handleDownloadSampleCSV}
+              sx={{ borderRadius: 2 }}
+            >
+              Download Sample CSV Template
+            </Button>
+          </Box>
 
           <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderStyle: 'dashed', borderWidth: 2, borderRadius: 2 }}>
             <input
@@ -333,13 +519,13 @@ const UserAdmin = () => {
           {importResult && (
             <Paper elevation={1} sx={{ p: 3, borderRadius: 2 }}>
               <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <CheckCircle color="success" /> Import Completed Summary
+                <CheckCircle color="success" /> Import Verification Results ({importResult.dryRun ? 'Dry Run' : 'Committed'})
               </Typography>
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={6} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h5" color="success.main" fontWeight="bold">{importResult.imported}</Typography>
-                    <Typography variant="caption" color="text.secondary">Successfully Seeded</Typography>
+                    <Typography variant="caption" color="text.secondary">Successfully Processed</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6} md={3}>
@@ -377,6 +563,59 @@ const UserAdmin = () => {
               )}
             </Paper>
           )}
+
+          {/* Class ID Reference Card with One-Click Copy */}
+          <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mt: 1 }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <School color="primary" /> Class ID Reference Table (For CSV `classId` Column)
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Click any <strong>Class ID (_id)</strong> badge below to copy it directly to your clipboard for your Excel/CSV file.
+            </Typography>
+            <TableContainer>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: 'grey.100' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Class Name</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Department</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Batch / Year</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Class ID (_id) — Click to Copy</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {classes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        No active classes found. Please create a class first.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    classes.map((cls) => (
+                      <TableRow key={cls._id} hover>
+                        <TableCell sx={{ fontWeight: 'bold' }}>{cls.name}</TableCell>
+                        <TableCell>{cls.department?.name || cls.department?.code || 'N/A'}</TableCell>
+                        <TableCell>{cls.batch?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={cls._id}
+                            size="small"
+                            clickable
+                            onClick={() => {
+                              navigator.clipboard.writeText(cls._id);
+                              alert(`Copied Class ID: ${cls._id}`);
+                            }}
+                            color="primary"
+                            variant="outlined"
+                            sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
         </Box>
       )}
 
@@ -630,6 +869,125 @@ const UserAdmin = () => {
           <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
           <Button variant="contained" disabled={isUpdating} onClick={handleUpdateUserSubmit}>
             {isUpdating ? <CircularProgress size={24} /> : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ASSIGN ROLE DIALOG */}
+      <Dialog open={openRoleDialog} onClose={() => setOpenRoleDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Assign Role (SFA / HOD / Principal)</DialogTitle>
+        <DialogContent dividers>
+          {roleError && <Alert severity="error" sx={{ mb: 2 }}>{roleError}</Alert>}
+          <Grid container spacing={2.5}>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Select Faculty Member</InputLabel>
+                <Select
+                  name="userId"
+                  value={roleFormData.userId}
+                  label="Select Faculty Member"
+                  onChange={(e) => setRoleFormData({ ...roleFormData, userId: e.target.value })}
+                >
+                  {users.filter((u) => u.userType !== 'STUDENT').length === 0 ? (
+                    <MenuItem disabled value="">
+                      No Faculty accounts found. Please create a Faculty user account first.
+                    </MenuItem>
+                  ) : (
+                    users
+                      .filter((u) => u.userType !== 'STUDENT')
+                      .map((u) => (
+                        <MenuItem key={u._id} value={u._id}>
+                          {u.fullName} ({u.username} • {u.userType})
+                        </MenuItem>
+                      ))
+                  )}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Role</InputLabel>
+                <Select
+                  name="role"
+                  value={roleFormData.role}
+                  label="Role"
+                  onChange={(e) => {
+                    const r = e.target.value;
+                    const scopeType = r === 'SFA' ? 'CLASS' : r === 'HOD' ? 'DEPARTMENT' : 'INSTITUTION';
+                    setRoleFormData({ ...roleFormData, role: r, scopeType, scopeId: '' });
+                  }}
+                >
+                  <MenuItem value="SFA">SFA (Senior Faculty Advisor)</MenuItem>
+                  <MenuItem value="HOD">HOD (Head of Department)</MenuItem>
+                  <MenuItem value="PRINCIPAL">Principal</MenuItem>
+                  <MenuItem value="FACULTY">Faculty</MenuItem>
+                  <MenuItem value="ADMIN">Admin</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Scope Type</InputLabel>
+                <Select
+                  name="scopeType"
+                  value={roleFormData.scopeType}
+                  label="Scope Type"
+                  onChange={(e) => setRoleFormData({ ...roleFormData, scopeType: e.target.value, scopeId: '' })}
+                >
+                  <MenuItem value="CLASS">Class (for SFA)</MenuItem>
+                  <MenuItem value="DEPARTMENT">Department (for HOD)</MenuItem>
+                  <MenuItem value="INSTITUTION">Institution (for Principal)</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {roleFormData.scopeType === 'CLASS' && (
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Target Class</InputLabel>
+                  <Select
+                    name="scopeId"
+                    value={roleFormData.scopeId}
+                    label="Target Class"
+                    onChange={(e) => setRoleFormData({ ...roleFormData, scopeId: e.target.value })}
+                  >
+                    {classes.map((c) => (
+                      <MenuItem key={c._id} value={c._id}>
+                        {c.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+
+            {roleFormData.scopeType === 'DEPARTMENT' && (
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Target Department</InputLabel>
+                  <Select
+                    name="scopeId"
+                    value={roleFormData.scopeId}
+                    label="Target Department"
+                    onChange={(e) => setRoleFormData({ ...roleFormData, scopeId: e.target.value })}
+                  >
+                    {departments.map((d) => (
+                      <MenuItem key={d._id} value={d._id}>
+                        {d.name} ({d.code})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenRoleDialog(false)}>Cancel</Button>
+          <Button variant="contained" color="secondary" disabled={isAssigningRole} onClick={handleRoleAssignSubmit}>
+            {isAssigningRole ? <CircularProgress size={24} /> : 'Assign Role'}
           </Button>
         </DialogActions>
       </Dialog>

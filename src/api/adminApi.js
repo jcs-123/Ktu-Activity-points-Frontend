@@ -4,7 +4,7 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ktu-activity-points-backend-2.onrender.com/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 export const adminApi = createApi({
   reducerPath: 'adminApi',
@@ -108,6 +108,10 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['AdminUsers'],
     }),
+    getRoleAssignments: builder.query({
+      query: () => '/role-assignments',
+      providesTags: ['AdminUsers'],
+    }),
     getSettings: builder.query({
       query: () => '/settings',
       providesTags: ['AdminSettings'],
@@ -172,6 +176,7 @@ export const {
   useGetSemestersQuery,
   useCreateSemesterMutation,
   useCreateRoleAssignmentMutation,
+  useGetRoleAssignmentsQuery,
   useGetSettingsQuery,
   useUpdateSettingsMutation,
   useGetAuditLogsQuery,
