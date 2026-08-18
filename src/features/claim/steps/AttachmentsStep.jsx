@@ -152,8 +152,7 @@ const AttachmentsStep = () => {
                 sx={{ bgcolor: 'action.hover', mb: 1, borderRadius: 2 }}
               >
                 <ListItemText
-                  primary={file.name}
-                  primaryTypographyProps={{ fontWeight: 'bold' }}
+                  primary={<Typography fontWeight="bold">{file.name}</Typography>}
                   secondary={`${(file.size / 1024 / 1024).toFixed(2)} MB`}
                 />
               </ListItem>

@@ -269,7 +269,7 @@ const HeadsAccordionGroup = ({ groupId, onEditHead, onEditItem, onEditOption }) 
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Chip label={`Max Cap: ${head.maxPoints} pts`} size="small" color="primary" variant="outlined" />
-                <IconButton size="small" onClick={(e) => { e.stopPropagation(); onEditHead(head); }}>
+                <IconButton component="span" size="small" onClick={(e) => { e.stopPropagation(); onEditHead(head); }}>
                   <Edit fontSize="small" />
                 </IconButton>
               </Box>
@@ -330,9 +330,8 @@ const OptionsList = ({ itemId, onEditOption }) => {
       {options.map((option) => (
         <ListItem key={option._id} divider sx={{ py: 0.5 }}>
           <ListItemText
-            primary={option.label}
+            primary={<Typography sx={{ fontSize: '0.82rem', fontWeight: 500 }}>{option.label}</Typography>}
             secondary={option.level ? `Level: ${option.level}` : null}
-            primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 500 }}
           />
           <Chip label={`${option.points} pts`} size="small" color="secondary" sx={{ mr: 1, fontWeight: 700 }} />
           <IconButton size="small" onClick={() => onEditOption(option)}>

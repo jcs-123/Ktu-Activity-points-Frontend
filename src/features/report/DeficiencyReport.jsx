@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, CircularProgress,
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Chip, Alert, Button,
   FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
-import { Warning, Download as DownloadIcon, Print as PrintIcon } from '@mui/icons-material';
+import { Warning, Download as DownloadIcon, Print as PrintIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { useGetClassDeficiencyQuery } from '../../api/reportApi';
 import { useGetClassesQuery } from '../../api/adminApi';
@@ -19,22 +19,36 @@ const DeficiencyReport = () => {
   const isStaff = roles.some(r => ['SFA', 'FACULTY', 'HOD', 'ADMIN', 'PRINCIPAL'].includes(r))
     || ['FACULTY', 'ADMIN'].includes(user?.userType);
 
-  const defaultAssignment = roleAssignments.find(r => r.scopeType === 'CLASS' || r.scopeId);
-  const defaultClassId = defaultAssignment?.scopeId?._id || defaultAssignment?.scopeId || '';
-
-  const [selectedClassId, setSelectedClassId] = useState(defaultClassId);
+  const [selectedClassId, setSelectedClassId] = useState('');
 
   const { data: classesData, isLoading: isLoadingClasses } = useGetClassesQuery(undefined, { skip: !isStaff });
   const classesList = classesData?.data || [];
 
+  // Automatically select the user's assigned class, or default to the first class in the list
+  useEffect(() => {
+    if (classesList.length > 0) {
+      if (!selectedClassId) {
+        const classAssignment = roleAssignments.find(r => (r.scopeType === 'CLASS' || r.role === 'SFA') && r.scopeId);
+        const assignedClassId = classAssignment?.scopeId?._id || classAssignment?.scopeId;
+        const matched = classesList.find(c => c._id?.toString() === assignedClassId?.toString());
+        if (matched) {
+          setSelectedClassId(matched._id);
+        } else {
+          setSelectedClassId(classesList[0]._id);
+        }
+      }
+    }
+  }, [classesList, roleAssignments, selectedClassId]);
+
   const effectiveClassId = selectedClassId || (classesList.length > 0 ? classesList[0]._id : null);
 
-  const { data, isLoading, isError } = useGetClassDeficiencyQuery(effectiveClassId, {
+  const { data, isLoading, isError, refetch } = useGetClassDeficiencyQuery(effectiveClassId, {
     skip: !effectiveClassId || !isStaff
   });
 
   const meta = data?.meta || {};
   const report = data?.data || [];
+  const selectedClassObj = classesList.find(c => c._id === effectiveClassId);
 
   const handlePrint = () => {
     window.print();
@@ -63,7 +77,7 @@ const DeficiencyReport = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Deficiency_Report_${meta?.className || 'Class'}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `Deficiency_Report_${meta?.className || selectedClassObj?.name || 'Class'}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -104,7 +118,7 @@ const DeficiencyReport = () => {
             <Warning fontSize="large" /> Class Deficiency Report
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Class: {meta.className || 'Selected Class'} • Students falling below the mandatory minimum point requirements (BR-01).
+            Class: {meta.className || selectedClassObj?.name || 'Selected Class'}{meta.departmentName ? ` (${meta.departmentName})` : selectedClassObj?.department?.code ? ` (${selectedClassObj.department.code})` : ''} • Students falling below the mandatory minimum point requirements (BR-01).
           </Typography>
         </Box>
 
@@ -119,7 +133,7 @@ const DeficiencyReport = () => {
               >
                 {classesList.map((cls) => (
                   <MenuItem key={cls._id} value={cls._id}>
-                    {cls.name} ({cls.department?.code || ''})
+                    {cls.name} ({cls.department?.code || cls.department?.name || ''})
                   </MenuItem>
                 ))}
               </Select>
@@ -152,7 +166,16 @@ const DeficiencyReport = () => {
         </Box>
       ) : isError ? (
         <Box sx={{ p: 4 }}>
-          <Alert severity="error">Failed to load Deficiency Report for the selected class.</Alert>
+          <Alert 
+            severity="error"
+            action={
+              <Button color="inherit" size="small" startIcon={<RefreshIcon />} onClick={() => refetch()}>
+                Retry
+              </Button>
+            }
+          >
+            Failed to load Deficiency Report for the selected class.
+          </Alert>
         </Box>
       ) : (
         <>
