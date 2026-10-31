@@ -6,19 +6,19 @@ import {
   InputLabel, Tabs, Tab, Chip, Alert, IconButton, Grid, Avatar
 } from '@mui/material';
 import {
-  PersonAdd, Upload, CheckCircle, Error, Group, AdminPanelSettings,
+  PersonAdd, Upload, Group,
   School, ManageAccounts, Edit as EditIcon, Badge as BadgeIcon, Add as AddIcon
 } from '@mui/icons-material';
 import {
   useGetUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
-  useBulkImportStudentsMutation,
   useGetClassesQuery,
   useGetDepartmentsQuery,
   useGetRoleAssignmentsQuery,
   useCreateRoleAssignmentMutation
 } from '../../api/adminApi';
+import BulkStudentCreate from './BulkStudentCreate';
 
 const UserAdmin = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -33,7 +33,7 @@ const UserAdmin = () => {
     userType: 'STUDENT',
     classId: '',
     category: 'REGULAR',
-    admissionDate: '2021-08-16',
+    admissionDate: '2025-08-01',
     gender: 'MALE',
   });
 
@@ -62,37 +62,22 @@ const UserAdmin = () => {
     scopeId: '',
   });
 
-  const [selectedImportClassId, setSelectedImportClassId] = useState('');
-  const [csvString, setCsvString] = useState('');
-  const [csvError, setCsvError] = useState('');
-  const [importResult, setImportResult] = useState(null);
-
-  const handleDownloadSampleCSV = () => {
-    const csvContent = `admissionno,fullname,email,mobile,category,admissiondate,gender
-TVE21CS001,Rahul Sharma,rahul.cs21@college.edu,9876543210,REGULAR,2021-08-16,MALE
-TVE21CS002,Anaya Ramesh,anaya.cs21@college.edu,9876543211,LATERAL_ENTRY,2022-08-16,FEMALE
-TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMALE`;
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'students_import_sample.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   // Queries & Mutations
-  const { data: usersData, isLoading: isLoadingUsers } = useGetUsersQuery({
-    limit: 100,
-  });
+  const { data: usersData, isLoading: isLoadingUsers } = useGetUsersQuery(
+    { limit: 200 },
+    { skip: activeTab === 2 }
+  );
   const { data: classesData } = useGetClassesQuery();
-  const { data: departmentsData } = useGetDepartmentsQuery();
-  const { data: roleAssignmentsData, isLoading: isLoadingRoles } = useGetRoleAssignmentsQuery();
+  const { data: departmentsData } = useGetDepartmentsQuery(undefined, {
+    skip: activeTab !== 1,
+  });
+  const { data: roleAssignmentsData, isLoading: isLoadingRoles } = useGetRoleAssignmentsQuery(
+    undefined,
+    { skip: activeTab !== 1 }
+  );
 
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
-  const [bulkImport, { isLoading: isImporting }] = useBulkImportStudentsMutation();
   const [createRoleAssignment, { isLoading: isAssigningRole }] = useCreateRoleAssignmentMutation();
 
   const users = usersData?.data || [];
@@ -188,40 +173,11 @@ TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMAL
         userType: 'STUDENT',
         classId: '',
         category: 'REGULAR',
-        admissionDate: '2021-08-16',
+        admissionDate: '2025-08-01',
         gender: 'MALE',
       });
     } catch (err) {
       setCreateError(err.data?.error?.message || err.data?.message || 'Failed to create user account.');
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setCsvString(event.target.result);
-      setCsvError('');
-      setImportResult(null);
-    };
-    reader.onerror = () => {
-      setCsvError('Failed to read CSV file.');
-    };
-    reader.readAsText(file);
-  };
-
-  const handleImportSubmit = async (dryRun = false) => {
-    if (!csvString) {
-      setCsvError('Please select a valid CSV file first.');
-      return;
-    }
-    try {
-      const res = await bulkImport({ csvData: csvString, dryRun, targetClassId: selectedImportClassId }).unwrap();
-      setImportResult(res.data);
-    } catch (err) {
-      setCsvError(err.data?.error?.message || 'Bulk import failed.');
     }
   };
 
@@ -235,19 +191,30 @@ TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMAL
               User Management
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
-              Create, view, and bulk import accounts for Students, SFAs, and HODs
+              Create, view, and bulk import student logins, SFAs, and HODs
             </Typography>
           </Box>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<PersonAdd />}
-          onClick={() => setOpenCreateDialog(true)}
-          sx={{ borderRadius: 3 }}
-        >
-          Create User
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<Upload />}
+            onClick={() => setActiveTab(2)}
+            sx={{ borderRadius: 3 }}
+          >
+            Bulk Student Login Create
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<PersonAdd />}
+            onClick={() => setOpenCreateDialog(true)}
+            sx={{ borderRadius: 3 }}
+          >
+            Create User
+          </Button>
+        </Box>
       </Box>
 
       {/* Tabs */}
@@ -255,7 +222,7 @@ TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMAL
         <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)}>
           <Tab icon={<Group />} iconPosition="start" label="All Accounts" />
           <Tab icon={<BadgeIcon />} iconPosition="start" label="Assign SFA / HOD Roles" />
-          <Tab icon={<Upload />} iconPosition="start" label="Bulk Import CSV" />
+          <Tab icon={<Upload />} iconPosition="start" label="Bulk Student Login Creation (CSV)" />
         </Tabs>
       </Paper>
 
@@ -273,6 +240,7 @@ TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMAL
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Username / ID</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
+                  <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Mobile</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Role Type</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
                   <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
@@ -281,7 +249,7 @@ TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMAL
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                       No user accounts found.
                     </TableCell>
                   </TableRow>
@@ -307,6 +275,7 @@ TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMAL
                       </TableCell>
                       <TableCell>{user.username}</TableCell>
                       <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.mobile || '—'}</TableCell>
                       <TableCell>
                         <Chip
                           label={user.userType}
@@ -439,138 +408,18 @@ TVE21CS003,Devika Pillai,devika.cs21@college.edu,9876543212,PWD,2021-08-16,FEMAL
         </Box>
       )}
 
-      {/* TAB 2: Bulk CSV Upload */}
+      {/* TAB 2: Bulk Student Login Creation (CSV) */}
       {activeTab === 2 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Alert severity="info" sx={{ borderRadius: 2 }}>
-            <strong>Bulk Import Options:</strong> You can select a <strong>Target Class</strong> below to assign all imported students to that class automatically (no <code>classId</code> column needed in CSV!). Or include <code>className</code> / <code>classId</code> in your CSV file.
-          </Alert>
-
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <FormControl sx={{ minWidth: 280 }} size="small">
-              <InputLabel>Target Class (Assign All Students)</InputLabel>
-              <Select
-                value={selectedImportClassId}
-                label="Target Class (Assign All Students)"
-                onChange={(e) => setSelectedImportClassId(e.target.value)}
-              >
-                <MenuItem value="">
-                  <em>None (Determine class from CSV file)</em>
-                </MenuItem>
-                {classes.map((c) => (
-                  <MenuItem key={c._id} value={c._id}>
-                    {c.name} ({c.department?.code || 'Dept'})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<Upload />}
-              onClick={handleDownloadSampleCSV}
-              sx={{ borderRadius: 2 }}
-            >
-              Download Sample CSV Template
-            </Button>
-          </Box>
-
-          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderStyle: 'dashed', borderWidth: 2, borderRadius: 2 }}>
-            <input
-              accept=".csv"
-              style={{ display: 'none' }}
-              id="csv-file-upload"
-              type="file"
-              onChange={handleFileChange}
-            />
-            <label htmlFor="csv-file-upload">
-              <Button variant="outlined" component="span" startIcon={<Upload />} sx={{ mb: 2 }}>
-                Choose CSV File
-              </Button>
-            </label>
-            <Typography variant="body2" color="text.secondary">
-              {csvString ? 'File loaded successfully.' : 'Select a CSV file containing students dataset to upload.'}
-            </Typography>
-          </Paper>
-
-          {csvError && <Alert severity="error">{csvError}</Alert>}
-
-          {csvString && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="outlined"
-                color="secondary"
-                disabled={isImporting}
-                onClick={() => handleImportSubmit(true)}
-              >
-                Dry Run Validation
-              </Button>
-              <Button
-                variant="contained"
-                disabled={isImporting}
-                onClick={() => handleImportSubmit(false)}
-              >
-                {isImporting ? <CircularProgress size={24} /> : 'Commit Import'}
-              </Button>
-            </Box>
-          )}
-
-          {importResult && (
-            <Paper elevation={1} sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <CheckCircle color="success" /> Import Verification Results ({importResult.dryRun ? 'Dry Run' : 'Committed'})
-              </Typography>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={6} md={3}>
-                  <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h5" color="success.main" fontWeight="bold">{importResult.imported}</Typography>
-                    <Typography variant="caption" color="text.secondary">Successfully Processed</Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                  <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h5" color="error.main" fontWeight="bold">{importResult.failed.length}</Typography>
-                    <Typography variant="caption" color="text.secondary">Failed Rows</Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-
-              {importResult.failed.length > 0 && (
-                <Box>
-                  <Typography variant="subtitle2" color="error" sx={{ mb: 1 }}>Failed Rows Details:</Typography>
-                  <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 250 }}>
-                    <Table size="small" stickyHeader>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Row</TableCell>
-                          <TableCell>Admission No</TableCell>
-                          <TableCell>Error Reason</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {importResult.failed.map((fail, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell>{fail.row}</TableCell>
-                            <TableCell>{fail.data?.admissionno}</TableCell>
-                            <TableCell color="error">{fail.error}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
-              )}
-            </Paper>
-          )}
+          <BulkStudentCreate embedded />
 
           {/* Class ID Reference Card with One-Click Copy */}
           <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mt: 1 }}>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <School color="primary" /> Class ID Reference Table (For CSV `classId` Column)
+              <School color="primary" /> Class ID Reference Table
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Click any <strong>Class ID (_id)</strong> badge below to copy it directly to your clipboard for your Excel/CSV file.
+              Click any <strong>Class ID (_id)</strong> badge below to copy it directly to your clipboard.
             </Typography>
             <TableContainer>
               <Table size="small">

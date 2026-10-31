@@ -15,7 +15,7 @@ import {
 import {
   Menu as MenuIcon, Dashboard, NoteAdd, Assignment,
   RateReview, Assessment, Leaderboard, People,
-  Settings, History, Notifications, School,
+  History, Notifications, School, PersonAdd,
   Logout, ChevronLeft, BarChart, Description,
   AdminPanelSettings, CalendarMonth, Warning,
 } from '@mui/icons-material';
@@ -81,6 +81,7 @@ const getNavItems = (roles = []) => {
       { divider: true, label: 'Administration' },
       { label: 'Catalogue', icon: <AdminPanelSettings />, path: '/admin/catalogue' },
       { label: 'Users', icon: <People />, path: '/admin/users' },
+      { label: 'Bulk Student Logins', icon: <PersonAdd />, path: '/admin/users/bulk' },
       { label: 'Semesters', icon: <CalendarMonth />, path: '/admin/semesters' },
       { label: 'Audit Log', icon: <History />, path: '/admin/audit' },
     );
