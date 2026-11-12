@@ -98,17 +98,28 @@ const SelectCatalogueStep = () => {
     return <CircularProgress />;
   }
 
+  const menuProps = {
+    slotProps: {
+      paper: {
+        sx: { maxWidth: 'calc(100vw - 32px)' },
+      },
+    },
+  };
+  const selectSx = {
+    '& .MuiSelect-select': { whiteSpace: 'normal' },
+  };
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 500, mx: 'auto', mt: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: 500, mx: 'auto', mt: { xs: 1, sm: 2 } }}>
       <Typography variant="h6" gutterBottom>
         Select Activity Category
       </Typography>
 
       <FormControl fullWidth>
         <InputLabel>Activity Group</InputLabel>
-        <Select value={groupId} label="Activity Group" onChange={handleGroupChange}>
+        <Select value={groupId} label="Activity Group" onChange={handleGroupChange} MenuProps={menuProps} sx={selectSx}>
           {groups?.map((group) => (
-            <MenuItem key={group._id} value={group._id}>
+            <MenuItem key={group._id} value={group._id} sx={{ whiteSpace: 'normal' }}>
               {group.code}: {group.name}
             </MenuItem>
           ))}
@@ -118,9 +129,9 @@ const SelectCatalogueStep = () => {
       {groupId && (
         <FormControl fullWidth disabled={isFetchingHeads}>
           <InputLabel>Activity Head</InputLabel>
-          <Select value={headId} label="Activity Head" onChange={handleHeadChange}>
+          <Select value={headId} label="Activity Head" onChange={handleHeadChange} MenuProps={menuProps} sx={selectSx}>
             {heads?.map((head) => (
-              <MenuItem key={head._id} value={head._id}>
+              <MenuItem key={head._id} value={head._id} sx={{ whiteSpace: 'normal' }}>
                 {head.name}
               </MenuItem>
             ))}
@@ -131,9 +142,9 @@ const SelectCatalogueStep = () => {
       {headId && (
         <FormControl fullWidth disabled={isFetchingItems}>
           <InputLabel>Activity Item</InputLabel>
-          <Select value={itemId} label="Activity Item" onChange={handleItemChange}>
+          <Select value={itemId} label="Activity Item" onChange={handleItemChange} MenuProps={menuProps} sx={selectSx}>
             {items?.map((item) => (
-              <MenuItem key={item._id} value={item._id}>
+              <MenuItem key={item._id} value={item._id} sx={{ whiteSpace: 'normal' }}>
                 {item.title || item.name}
               </MenuItem>
             ))}
@@ -144,9 +155,9 @@ const SelectCatalogueStep = () => {
       {itemId && options && options.length > 0 && (
         <FormControl fullWidth disabled={isFetchingOptions}>
           <InputLabel>Specific Option / Level</InputLabel>
-          <Select value={optionId} label="Specific Option / Level" onChange={handleOptionChange}>
+          <Select value={optionId} label="Specific Option / Level" onChange={handleOptionChange} MenuProps={menuProps} sx={selectSx}>
             {options.map((opt) => (
-              <MenuItem key={opt._id} value={opt._id}>
+              <MenuItem key={opt._id} value={opt._id} sx={{ whiteSpace: 'normal' }}>
                 {opt.label || opt.name} (Max: {opt.points ?? opt.maxPoints})
               </MenuItem>
             ))}
@@ -155,8 +166,8 @@ const SelectCatalogueStep = () => {
       )}
 
       {selectedItem && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(76, 175, 80, 0.1)', borderRadius: 2 }}>
-          <Typography variant="subtitle2" color="success.main">
+        <Box sx={{ mt: 1, p: 2, bgcolor: 'rgba(76, 175, 80, 0.1)', borderRadius: 2 }}>
+          <Typography variant="subtitle2" color="success.main" sx={{ overflowWrap: 'anywhere' }}>
             Selected: {selectedItem.title}
           </Typography>
         </Box>

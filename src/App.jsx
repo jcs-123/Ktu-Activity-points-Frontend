@@ -14,9 +14,10 @@ import LoginPage from './features/auth/LoginPage';
 import AppLayout from './components/layout/AppLayout';
 import AuthInitializer from './features/auth/AuthInitializer';
 import UserAdmin from './features/admin/UserAdmin';
-import BulkStudentCreate from './features/admin/BulkStudentCreate';
 
 // Lazy-loaded pages to reduce initial bundle size and speed up page load
+const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./features/auth/ResetPasswordPage'));
 const StudentDashboard = lazy(() => import('./features/student/StudentDashboard'));
 const ClaimWizard = lazy(() => import('./features/claim/ClaimWizard'));
 const MyClaims = lazy(() => import('./features/claim/MyClaims'));
@@ -52,6 +53,8 @@ function App() {
               <Routes>
                 {/* Public */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
                 {/* Authenticated — wrapped in layout */}
                 <Route element={<AppLayout />}>
@@ -78,7 +81,6 @@ function App() {
                   {/* Admin */}
                   <Route path="/admin/catalogue" element={<CatalogueAdmin />} />
                   <Route path="/admin/users" element={<UserAdmin />} />
-                  <Route path="/admin/users/bulk" element={<BulkStudentCreate />} />
                   <Route path="/admin/semesters" element={<SemesterConfig />} />
                   <Route path="/admin/audit" element={<AuditLogView />} />
 
@@ -101,10 +103,10 @@ function App() {
 // Temporary placeholder for pages not yet built
 function PlaceholderPage({ title }) {
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ color: '#1F3864' }}>{title}</h2>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <h2 style={{ color: '#1F3864', marginBottom: 8 }}>{title}</h2>
       <p style={{ color: '#666' }}>This page is under construction. Coming soon!</p>
-    </div>
+    </Box>
   );
 }
 

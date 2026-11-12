@@ -27,7 +27,7 @@ const MyReport = () => {
 
   if (isError) {
     return (
-      <Box sx={{ p: 4 }}>
+      <Box sx={{ p: { xs: 2, sm: 4 } }}>
         <Typography color="error" variant="h6">Failed to load personal report.</Typography>
       </Box>
     );
@@ -42,7 +42,7 @@ const MyReport = () => {
   const headBreakdown = scoreData?.data?.headBreakdown || [];
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 } }}>
       {/* Action Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2, '@media print': { display: 'none' } }}>
         <Box>
@@ -64,10 +64,10 @@ const MyReport = () => {
       </Box>
 
       {/* Printable Paper Document Container */}
-      <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }} elevation={2}>
+      <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2 }} elevation={2}>
         
         {/* Printable Official Header */}
-        <Box sx={{ textAlign: 'center', mb: 4, pb: 2, borderBottom: '2px solid #1976d2' }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 }, pb: 2, borderBottom: '2px solid #1976d2' }}>
           <Typography variant="h5" fontWeight="bold" color="primary">
             JYOTHI ENGINEERING COLLEGE, CHERUTHURUTHY
           </Typography>
@@ -80,14 +80,30 @@ const MyReport = () => {
         </Box>
 
         {/* Student Profile Meta Block */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 4, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
-          <Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2, mb: 4, p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', borderRadius: 2 }}>
+          <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
             <Typography variant="caption" color="text.secondary">Student Name</Typography>
             <Typography variant="body1" fontWeight="bold">{user?.fullName || 'N/A'}</Typography>
           </Box>
           <Box>
             <Typography variant="caption" color="text.secondary">Admission / Register No.</Typography>
             <Typography variant="body1" fontWeight="bold">{user?.username || 'N/A'}</Typography>
+          </Box>
+          <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+            <Typography variant="caption" color="text.secondary">Department</Typography>
+            <Typography variant="body1" fontWeight="bold">
+              {user?.student?.class?.department
+                ? `${user.student.class.department.code ? `${user.student.class.department.code} — ` : ''}${user.student.class.department.name}`
+                : 'N/A'}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary">Class / Batch</Typography>
+            <Typography variant="body1" fontWeight="bold">
+              {user?.student?.class?.name
+                ? `${user.student.class.name}${user.student.class.batch?.name ? ` (${user.student.class.batch.name})` : ''}`
+                : 'N/A'}
+            </Typography>
           </Box>
           <Box>
             <Typography variant="caption" color="text.secondary">Category</Typography>
@@ -96,7 +112,7 @@ const MyReport = () => {
         </Box>
 
         {/* Summary Cards */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 4 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3, mb: 4 }}>
           <Card sx={{ bgcolor: 'primary.light', color: 'primary.contrastText' }}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <EmojiEvents sx={{ fontSize: 40 }} />
@@ -135,7 +151,7 @@ const MyReport = () => {
           Activity Category Breakdown
         </Typography>
         <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
-          <Table size="small">
+          <Table size="small" sx={{ minWidth: 560 }}>
             <TableHead sx={{ bgcolor: 'grey.100' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Group</TableCell>
@@ -180,23 +196,26 @@ const MyReport = () => {
         </TableContainer>
 
         {/* Official Signature Block (SRS FR-F-01 requirement) */}
-        <Box sx={{ mt: 8, pt: 4, borderTop: '1px dashed #ccc', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
-          <Box sx={{ textAlign: 'center', minWidth: 200 }}>
-            <Typography variant="body2" sx={{ mb: 6 }}>___________________________________</Typography>
-            <Typography variant="body2" fontWeight="bold">Signature of Student</Typography>
-            <Typography variant="caption" color="text.secondary">Date: ______________</Typography>
+        <Box sx={{ mt: { xs: 5, sm: 8 }, pt: 4, borderTop: '1px dashed #ccc', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: { xs: 3, sm: 4 } }}>
+          <Box sx={{ textAlign: 'center', flex: '1 1 160px', maxWidth: { sm: 240 }, pt: 5 }}>
+            <Box sx={{ borderTop: '1px solid #333', pt: 1 }}>
+              <Typography variant="body2" fontWeight="bold">Signature of Student</Typography>
+              <Typography variant="caption" color="text.secondary">Date: ______________</Typography>
+            </Box>
           </Box>
           
-          <Box sx={{ textAlign: 'center', minWidth: 200 }}>
-            <Typography variant="body2" sx={{ mb: 6 }}>___________________________________</Typography>
-            <Typography variant="body2" fontWeight="bold">Senior Faculty Advisor (SFA)</Typography>
-            <Typography variant="caption" color="text.secondary">Verification Seal & Signature</Typography>
+          <Box sx={{ textAlign: 'center', flex: '1 1 160px', maxWidth: { sm: 240 }, pt: 5 }}>
+            <Box sx={{ borderTop: '1px solid #333', pt: 1 }}>
+              <Typography variant="body2" fontWeight="bold">Senior Faculty Advisor (SFA)</Typography>
+              <Typography variant="caption" color="text.secondary">Verification Seal & Signature</Typography>
+            </Box>
           </Box>
           
-          <Box sx={{ textAlign: 'center', minWidth: 200 }}>
-            <Typography variant="body2" sx={{ mb: 6 }}>___________________________________</Typography>
-            <Typography variant="body2" fontWeight="bold">Head of Department (HOD)</Typography>
-            <Typography variant="caption" color="text.secondary">Approval & Date</Typography>
+          <Box sx={{ textAlign: 'center', flex: '1 1 160px', maxWidth: { sm: 240 }, pt: 5 }}>
+            <Box sx={{ borderTop: '1px solid #333', pt: 1 }}>
+              <Typography variant="body2" fontWeight="bold">Head of Department (HOD)</Typography>
+              <Typography variant="caption" color="text.secondary">Approval & Date</Typography>
+            </Box>
           </Box>
         </Box>
 

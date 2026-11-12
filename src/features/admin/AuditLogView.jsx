@@ -63,12 +63,12 @@ const AuditLogView = () => {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1400, margin: '0 auto' }}>
+    <Box sx={{ p: { xs: 1.5, sm: 3 }, maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <History color="primary" sx={{ fontSize: 32 }} />
-          <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          <History color="primary" sx={{ fontSize: 32, flexShrink: 0 }} />
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="h5" fontWeight={700} color="#1F3864">
               System Audit Logs
             </Typography>
@@ -78,7 +78,7 @@ const AuditLogView = () => {
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
@@ -106,8 +106,8 @@ const AuditLogView = () => {
 
       {/* Filter Bar */}
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={4} md={3}>
+        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
+          <Grid size={{ xs: 12, sm: 4, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Entity Type</InputLabel>
               <Select
@@ -128,7 +128,7 @@ const AuditLogView = () => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={4} md={3}>
+          <Grid size={{ xs: 12, sm: 4, md: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Action</InputLabel>
               <Select
@@ -153,7 +153,7 @@ const AuditLogView = () => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={4} md={2}>
+          <Grid size={{ xs: 12, sm: 4, md: 2 }}>
             <Button
               variant="text"
               onClick={() => {
@@ -169,7 +169,7 @@ const AuditLogView = () => {
       </Paper>
 
       {/* Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
+      <Paper sx={{ borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
             <CircularProgress />
@@ -178,67 +178,69 @@ const AuditLogView = () => {
           <Alert severity="error" sx={{ m: 2 }}>Failed to load audit logs.</Alert>
         ) : (
           <>
-            <Table>
-              <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell fontWeight={700}>Timestamp</TableCell>
-                  <TableCell fontWeight={700}>Actor</TableCell>
-                  <TableCell fontWeight={700}>Action</TableCell>
-                  <TableCell fontWeight={700}>Entity Type</TableCell>
-                  <TableCell fontWeight={700}>IP Address</TableCell>
-                  <TableCell align="center" fontWeight={700}>Details</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {logs.length === 0 ? (
+            <TableContainer sx={{ overflowX: 'auto' }}>
+              <Table sx={{ minWidth: 720 }}>
+                <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                      No audit events found matching filters.
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Timestamp</TableCell>
+                    <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Actor</TableCell>
+                    <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Action</TableCell>
+                    <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Entity Type</TableCell>
+                    <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>IP Address</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Details</TableCell>
                   </TableRow>
-                ) : (
-                  logs.map((log) => (
-                    <TableRow key={log._id} hover>
-                      <TableCell sx={{ fontSize: '0.85rem' }}>
-                        {new Date(log.createdAt).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {log.actor?.fullName || 'System'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {log.actor?.username || ''}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={log.action}
-                          size="small"
-                          color={ACTION_COLORS[log.action] || 'default'}
-                          variant="outlined"
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{log.entityType}</Typography>
-                      </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                        {log.ipAddress || '—'}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Button
-                          size="small"
-                          startIcon={<Visibility />}
-                          onClick={() => setSelectedLog(log)}
-                        >
-                          View
-                        </Button>
+                </TableHead>
+                <TableBody>
+                  {logs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                        No audit events found matching filters.
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    logs.map((log) => (
+                      <TableRow key={log._id} hover>
+                        <TableCell sx={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                          {new Date(log.createdAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {log.actor?.fullName || 'System'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {log.actor?.username || ''}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={log.action}
+                            size="small"
+                            color={ACTION_COLORS[log.action] || 'default'}
+                            variant="outlined"
+                            sx={{ fontWeight: 600 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{log.entityType}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                          {log.ipAddress || '—'}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            size="small"
+                            startIcon={<Visibility />}
+                            onClick={() => setSelectedLog(log)}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
             <TablePagination
               rowsPerPageOptions={[10, 25, 50, 100]}
               component="div"
@@ -250,7 +252,7 @@ const AuditLogView = () => {
             />
           </>
         )}
-      </TableContainer>
+      </Paper>
 
       {/* Detail Modal */}
       <Dialog
@@ -266,21 +268,21 @@ const AuditLogView = () => {
           {selectedLog && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">Action</Typography>
-                  <Typography variant="body1" fontWeight={600}>{selectedLog.action}</Typography>
+                  <Typography variant="body1" fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>{selectedLog.action}</Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">Timestamp</Typography>
                   <Typography variant="body1">{new Date(selectedLog.createdAt).toLocaleString()}</Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">Actor</Typography>
-                  <Typography variant="body1">{selectedLog.actor?.fullName || 'System'} ({selectedLog.actor?.username || 'N/A'})</Typography>
+                  <Typography variant="body1" sx={{ overflowWrap: 'anywhere' }}>{selectedLog.actor?.fullName || 'System'} ({selectedLog.actor?.username || 'N/A'})</Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">Entity Type / ID</Typography>
-                  <Typography variant="body1">{selectedLog.entityType} ({selectedLog.entityId || 'N/A'})</Typography>
+                  <Typography variant="body1" sx={{ overflowWrap: 'anywhere' }}>{selectedLog.entityType} ({selectedLog.entityId || 'N/A'})</Typography>
                 </Grid>
               </Grid>
 
@@ -291,7 +293,7 @@ const AuditLogView = () => {
                   <Typography variant="subtitle2" color="error" gutterBottom>
                     Before Value
                   </Typography>
-                  <Paper sx={{ p: 2, bg: '#FFF5F5', fontFamily: 'monospace', fontSize: '0.8rem', overflowX: 'auto' }}>
+                  <Paper sx={{ p: 2, bgcolor: '#FFF5F5', fontFamily: 'monospace', fontSize: '0.8rem', overflowX: 'auto' }}>
                     <pre>{JSON.stringify(selectedLog.beforeValue, null, 2)}</pre>
                   </Paper>
                 </Box>
@@ -302,7 +304,7 @@ const AuditLogView = () => {
                   <Typography variant="subtitle2" color="success.main" gutterBottom>
                     After Value
                   </Typography>
-                  <Paper sx={{ p: 2, bg: '#F0FDF4', fontFamily: 'monospace', fontSize: '0.8rem', overflowX: 'auto' }}>
+                  <Paper sx={{ p: 2, bgcolor: '#F0FDF4', fontFamily: 'monospace', fontSize: '0.8rem', overflowX: 'auto' }}>
                     <pre>{JSON.stringify(selectedLog.afterValue, null, 2)}</pre>
                   </Paper>
                 </Box>

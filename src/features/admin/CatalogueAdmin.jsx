@@ -93,7 +93,7 @@ const CatalogueAdmin = () => {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1400, margin: '0 auto' }}>
+    <Box sx={{ p: { xs: 1.5, sm: 3 }, maxWidth: 1400, margin: '0 auto' }}>
       {/* Page Title */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight={700} color="#1F3864">
@@ -105,13 +105,13 @@ const CatalogueAdmin = () => {
       </Box>
 
       {/* Main Grid — Groups & Heads */}
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         {groups.map((group) => (
-          <Grid item xs={12} key={group._id}>
-            <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <Folder color="primary" sx={{ fontSize: 28 }} />
-                <Typography variant="h6" fontWeight={700}>
+          <Grid size={12} key={group._id}>
+            <Paper sx={{ p: { xs: 1.5, sm: 3 }, borderRadius: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+                <Folder color="primary" sx={{ fontSize: 28, flexShrink: 0 }} />
+                <Typography variant="h6" fontWeight={700} sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
                   Group {group.code} — {group.name}
                 </Typography>
               </Box>
@@ -262,12 +262,12 @@ const HeadsAccordionGroup = ({ groupId, onEditHead, onEditItem, onEditOption }) 
       {heads.map((head) => (
         <Accordion key={head._id} variant="outlined">
           <AccordionSummary expandIcon={<ExpandMore />}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Category color="action" fontSize="small" />
-                <Typography fontWeight={600}>{head.code} — {head.name}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, width: '100%', pr: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: '1 1 200px' }}>
+                <Category color="action" fontSize="small" sx={{ flexShrink: 0 }} />
+                <Typography fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>{head.code} — {head.name}</Typography>
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
                 <Chip label={`Max Cap: ${head.maxPoints} pts`} size="small" color="primary" variant="outlined" />
                 <IconButton component="span" size="small" onClick={(e) => { e.stopPropagation(); onEditHead(head); }}>
                   <Edit fontSize="small" />
@@ -275,7 +275,7 @@ const HeadsAccordionGroup = ({ groupId, onEditHead, onEditItem, onEditOption }) 
               </Box>
             </Box>
           </AccordionSummary>
-          <AccordionDetails>
+          <AccordionDetails sx={{ px: { xs: 1.5, sm: 2 } }}>
             <ItemsGroup headId={head._id} onEditItem={onEditItem} onEditOption={onEditOption} />
           </AccordionDetails>
         </Accordion>
@@ -292,21 +292,21 @@ const ItemsGroup = ({ headId, onEditItem, onEditOption }) => {
   if (isLoading) return <CircularProgress size={20} sx={{ my: 1 }} />;
 
   return (
-    <Box sx={{ pl: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+    <Box sx={{ pl: { xs: 0, sm: 2 }, display: 'flex', flexDirection: 'column', gap: 1 }}>
       {items.map((item) => (
-        <Paper key={item._id} variant="outlined" sx={{ p: 2, bgcolor: '#F8FAFC' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Extension fontSize="small" color="secondary" />
-              <Typography variant="subtitle2" fontWeight={700}>{item.code} — {item.title}</Typography>
+        <Paper key={item._id} variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#F8FAFC' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+              <Extension fontSize="small" color="secondary" sx={{ flexShrink: 0 }} />
+              <Typography variant="subtitle2" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>{item.code} — {item.title}</Typography>
             </Box>
-            <IconButton size="small" onClick={() => onEditItem(item)}>
+            <IconButton size="small" sx={{ flexShrink: 0 }} onClick={() => onEditItem(item)}>
               <Edit fontSize="small" />
             </IconButton>
           </Box>
 
           {item.evidenceText && (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, overflowWrap: 'anywhere' }}>
               <strong>Evidence Requirement:</strong> {item.evidenceText}
             </Typography>
           )}
@@ -328,15 +328,18 @@ const OptionsList = ({ itemId, onEditOption }) => {
   return (
     <List dense sx={{ bgcolor: '#fff', borderRadius: 1, border: '1px solid #E2E8F0', p: 0 }}>
       {options.map((option) => (
-        <ListItem key={option._id} divider sx={{ py: 0.5 }}>
+        <ListItem key={option._id} divider sx={{ py: 0.75, px: { xs: 1.5, sm: 2 }, flexWrap: 'wrap', gap: 1 }}>
           <ListItemText
+            sx={{ minWidth: 0, flex: '1 1 200px', overflowWrap: 'anywhere' }}
             primary={<Typography sx={{ fontSize: '0.82rem', fontWeight: 500 }}>{option.label}</Typography>}
             secondary={option.level ? `Level: ${option.level}` : null}
           />
-          <Chip label={`${option.points} pts`} size="small" color="secondary" sx={{ mr: 1, fontWeight: 700 }} />
-          <IconButton size="small" onClick={() => onEditOption(option)}>
-            <Edit fontSize="small" />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+            <Chip label={`${option.points} pts`} size="small" color="secondary" sx={{ fontWeight: 700 }} />
+            <IconButton size="small" onClick={() => onEditOption(option)}>
+              <Edit fontSize="small" />
+            </IconButton>
+          </Box>
         </ListItem>
       ))}
     </List>

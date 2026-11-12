@@ -72,7 +72,7 @@ const AttachmentsStep = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 2 }}>
+    <Box sx={{ width: '100%', maxWidth: 600, mx: 'auto', mt: { xs: 1, sm: 2 } }}>
       <Typography variant="h6" gutterBottom fontWeight="bold">
         Upload Certificates / Proofs
       </Typography>
@@ -97,7 +97,7 @@ const AttachmentsStep = () => {
       <Paper
         {...getRootProps()}
         sx={{
-          p: 4,
+          p: { xs: 2.5, sm: 4 },
           border: '2px dashed',
           borderColor: isDragActive ? 'primary.main' : 'grey.400',
           bgcolor: isDragActive ? 'rgba(33, 150, 243, 0.05)' : 'background.paper',
@@ -109,7 +109,7 @@ const AttachmentsStep = () => {
         }}
       >
         <input {...getInputProps()} />
-        <CloudUploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+        <CloudUploadIcon sx={{ fontSize: { xs: 40, sm: 48 }, color: 'primary.main', mb: 1 }} />
         <Typography variant="body1" fontWeight="bold">
           {isDragActive
             ? "Drop the files here..."
@@ -149,10 +149,11 @@ const AttachmentsStep = () => {
                     <DeleteIcon />
                   </IconButton>
                 }
-                sx={{ bgcolor: 'action.hover', mb: 1, borderRadius: 2 }}
+                sx={{ bgcolor: 'action.hover', mb: 1, borderRadius: 2, pr: 6 }}
               >
                 <ListItemText
-                  primary={<Typography fontWeight="bold">{file.name}</Typography>}
+                  sx={{ minWidth: 0 }}
+                  primary={<Typography fontWeight="bold" sx={{ overflowWrap: 'anywhere' }}>{file.name}</Typography>}
                   secondary={`${(file.size / 1024 / 1024).toFixed(2)} MB`}
                 />
               </ListItem>

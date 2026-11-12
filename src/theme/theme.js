@@ -4,9 +4,9 @@
  * Consistent with existing JECC documentation.
  */
 
-import { createTheme } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 
-const theme = createTheme({
+const baseTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -103,16 +103,28 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          padding: '8px 20px',
+          padding: '8px 16px',
           boxShadow: 'none',
           '&:hover': {
             boxShadow: '0 2px 8px rgba(31, 56, 100, 0.2)',
           },
         },
+        sizeSmall: {
+          padding: '5px 10px',
+        },
         contained: {
           '&:hover': {
             boxShadow: '0 4px 12px rgba(31, 56, 100, 0.3)',
           },
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          maxWidth: '100%',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         },
       },
     },
@@ -134,6 +146,11 @@ const theme = createTheme({
         root: {
           fontWeight: 600,
           fontSize: '0.8rem',
+          maxWidth: '100%',
+        },
+        label: {
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         },
       },
     },
@@ -172,5 +189,7 @@ const theme = createTheme({
     },
   },
 });
+
+const theme = responsiveFontSizes(baseTheme);
 
 export default theme;

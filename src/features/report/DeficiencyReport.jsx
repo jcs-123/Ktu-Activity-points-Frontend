@@ -110,11 +110,11 @@ const DeficiencyReport = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 } }}>
       {/* Header and Controls */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2, '@media print': { display: 'none' } }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" color="error.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h4" fontWeight="bold" color="error.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Warning fontSize="large" /> Class Deficiency Report
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -122,9 +122,9 @@ const DeficiencyReport = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
           {classesList.length > 0 && (
-            <FormControl size="small" sx={{ minWidth: 220 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 220 } }}>
               <InputLabel>Select Class</InputLabel>
               <Select
                 value={effectiveClassId || ''}
@@ -145,6 +145,7 @@ const DeficiencyReport = () => {
             startIcon={<DownloadIcon />}
             onClick={handleExportCSV}
             disabled={!report || report.length === 0}
+            sx={{ flex: { xs: '1 1 auto', sm: '0 0 auto' } }}
           >
             Export CSV
           </Button>
@@ -154,6 +155,7 @@ const DeficiencyReport = () => {
             startIcon={<PrintIcon />}
             onClick={handlePrint}
             disabled={!data?.data}
+            sx={{ flex: { xs: '1 1 auto', sm: '0 0 auto' } }}
           >
             Print Report
           </Button>
@@ -165,7 +167,7 @@ const DeficiencyReport = () => {
           <CircularProgress />
         </Box>
       ) : isError ? (
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: { xs: 2, sm: 4 } }}>
           <Alert 
             severity="error"
             action={
@@ -180,17 +182,64 @@ const DeficiencyReport = () => {
       ) : (
         <>
           {meta.deficientStudents > 0 ? (
-            <Alert severity="error" sx={{ mb: 4 }}>
+            <Alert severity="error" sx={{ mb: 3 }}>
               <strong>Attention required:</strong> {meta.deficientStudents} student(s) in this class have not met their target Activity Points threshold.
             </Alert>
           ) : (
-            <Alert severity="success" sx={{ mb: 4 }}>
+            <Alert severity="success" sx={{ mb: 3 }}>
               All students in this class have met their required target Activity Points!
             </Alert>
           )}
 
-          {/* Printable Report Table */}
-          <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, overflowX: 'auto', width: '100%' }}>
+          {/* Mobile Card View (hidden on print and md+) */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, '@media print': { display: 'none' } }}>
+            {report.length === 0 ? (
+              <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+                No students found in this class.
+              </Paper>
+            ) : (
+              report.map((student) => (
+                <Paper
+                  key={student.id}
+                  variant="outlined"
+                  sx={{ p: 2, borderRadius: 2, bgcolor: student.isDeficient ? 'error.50' : 'background.paper' }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle2" fontWeight="bold" sx={{ overflowWrap: 'anywhere' }}>{student.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">{student.admissionNo} • {student.category || 'REGULAR'}</Typography>
+                    </Box>
+                    {student.isDeficient ? (
+                      <Chip label={`Deficit: ${student.deficit} pts`} color="error" size="small" sx={{ fontWeight: 'bold', flexShrink: 0 }} />
+                    ) : (
+                      <Chip label="Cleared" color="success" size="small" sx={{ flexShrink: 0 }} />
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', mt: 1 }}>
+                    <Chip label={`Grp I: ${student.group1Points || 0}`} size="small" variant="outlined" color={student.group1Points >= (student.requiredPerGroup || 40) ? 'success' : 'error'} />
+                    <Chip label={`Grp II: ${student.group2Points || 0}`} size="small" variant="outlined" color={student.group2Points >= (student.requiredPerGroup || 40) ? 'success' : 'error'} />
+                    <Chip label={`Grp III: ${student.group3Points || 0}`} size="small" variant="outlined" color={student.group3Points >= (student.requiredPerGroup || 40) ? 'success' : 'error'} />
+                    <Typography variant="body2" fontWeight="bold" color={student.isDeficient ? 'error.main' : 'success.main'} sx={{ ml: 'auto' }}>
+                      {student.totalPoints} / {student.requiredPoints} pts
+                    </Typography>
+                  </Box>
+                </Paper>
+              ))
+            )}
+          </Box>
+
+          {/* Printable / Tablet & Desktop Report Table */}
+          <TableContainer
+            component={Paper}
+            elevation={2}
+            sx={{
+              borderRadius: 2,
+              overflowX: 'auto',
+              width: '100%',
+              display: { xs: 'none', md: 'block' },
+              '@media print': { display: 'block' },
+            }}
+          >
             <Table sx={{ minWidth: 720 }}>
               <TableHead sx={{ backgroundColor: 'error.main' }}>
                 <TableRow>
@@ -269,13 +318,11 @@ const DeficiencyReport = () => {
           </TableContainer>
 
           {/* SFA Signature Footer for Printed Deficiency Reports */}
-          <Box sx={{ mt: 8, pt: 4, display: 'none', '@media print': { display: 'flex' }, justifyContent: 'space-between' }}>
-            <Box>
-              <Typography variant="body2" sx={{ mb: 4 }}>________________________</Typography>
+          <Box sx={{ mt: 8, pt: 4, display: 'none', '@media print': { display: 'flex' }, justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 }}>
+            <Box sx={{ borderTop: '1px solid #333', pt: 1, minWidth: 180, mt: 4 }}>
               <Typography variant="body2" fontWeight="bold">SFA Signature & Date</Typography>
             </Box>
-            <Box>
-              <Typography variant="body2" sx={{ mb: 4 }}>________________________</Typography>
+            <Box sx={{ borderTop: '1px solid #333', pt: 1, minWidth: 180, mt: 4 }}>
               <Typography variant="body2" fontWeight="bold">HOD Verification & Seal</Typography>
             </Box>
           </Box>

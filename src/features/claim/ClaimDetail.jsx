@@ -92,7 +92,7 @@ const ClaimDetail = () => {
 
   if (isError || !claimResponse?.data) {
     return (
-      <Box sx={{ p: 4 }}>
+      <Box sx={{ p: { xs: 2, sm: 4 } }}>
         <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/claims')} sx={{ mb: 3 }}>
           Back to My Claims
         </Button>
@@ -106,15 +106,15 @@ const ClaimDetail = () => {
   const timeline = claim.timeline || [];
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 } }}>
       <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/claims')} sx={{ mb: 3 }}>
         Back to My Claims
       </Button>
 
-      <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: 2, mb: 4 }} elevation={2}>
+      <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2, mb: { xs: 2.5, md: 4 } }} elevation={2}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
+          <Box sx={{ minWidth: 0, flex: '1 1 220px' }}>
+            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ overflowWrap: 'anywhere' }}>
               {claim.title || claim.activityOption?.label || 'Untitled Claim'}
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
@@ -133,7 +133,7 @@ const ClaimDetail = () => {
         </Box>
 
         {claim.status === 'REVERTED' && (
-          <Box sx={{ mb: 3, p: 3, bgcolor: '#FFF3E0', border: '2px solid #FF9800', borderRadius: 2 }}>
+          <Box sx={{ mb: 3, p: { xs: 2, sm: 3 }, bgcolor: '#FFF3E0', border: '2px solid #FF9800', borderRadius: 2 }}>
             <Typography variant="h6" fontWeight="bold" color="warning.dark" gutterBottom>
               ⚠️ Claim Reverted for Clarification
             </Typography>
@@ -180,12 +180,12 @@ const ClaimDetail = () => {
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                   {attachments.map(att => (
-                    <Paper key={att._id} variant="outlined" sx={{ px: 1.5, py: 0.8, display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#F9F9F9' }}>
-                      <FileIcon fontSize="small" color="primary" />
-                      <Typography variant="body2" fontWeight="medium">{att.originalFilename}</Typography>
+                    <Paper key={att._id} variant="outlined" sx={{ px: 1.5, py: 0.8, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, bgcolor: '#F9F9F9', maxWidth: '100%' }}>
+                      <FileIcon fontSize="small" color="primary" sx={{ flexShrink: 0 }} />
+                      <Typography variant="body2" fontWeight="medium" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>{att.originalFilename}</Typography>
                       <Button
                         size="small"
-                        sx={{ ml: 1, py: 0, minWidth: 'auto', fontSize: '0.75rem' }}
+                        sx={{ ml: { xs: 0, sm: 1 }, py: 0, minWidth: 'auto', fontSize: '0.75rem' }}
                         onClick={() => handleViewAttachment(att._id, att.mimeType)}
                       >
                         View
@@ -251,9 +251,9 @@ const ClaimDetail = () => {
         </Box>
 
         {claim.description && (
-          <Box sx={{ mb: 4, p: 3, bgcolor: 'grey.50', borderRadius: 2 }}>
+          <Box sx={{ mb: 4, p: { xs: 2, sm: 3 }, bgcolor: 'grey.50', borderRadius: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>Description</Typography>
-            <Typography variant="body1">{claim.description}</Typography>
+            <Typography variant="body1" sx={{ overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>{claim.description}</Typography>
           </Box>
         )}
 
@@ -263,9 +263,9 @@ const ClaimDetail = () => {
         {attachments.length > 0 ? (
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             {attachments.map(att => (
-              <Paper key={att._id} variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2 }}>
-                <FileIcon color="action" />
-                <Box>
+              <Paper key={att._id} variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, borderRadius: 2, width: { xs: '100%', sm: 'auto' }, maxWidth: '100%' }}>
+                <FileIcon color="action" sx={{ flexShrink: 0 }} />
+                <Box sx={{ minWidth: 0, flex: '1 1 160px', overflowWrap: 'anywhere' }}>
                   <Typography variant="body2" fontWeight="medium">{att.originalFilename}</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {(att.sizeBytes / 1024).toFixed(1)} KB
@@ -289,7 +289,7 @@ const ClaimDetail = () => {
       </Paper>
 
       {/* Timeline Section */}
-      <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }} elevation={2}>
+      <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2 }} elevation={2}>
         <Typography variant="h6" fontWeight="bold" sx={{ mb: 3 }}>Status History</Typography>
         <Box sx={{ pl: 1 }}>
           {timeline.length > 0 ? timeline.map((event, index) => (
@@ -298,14 +298,14 @@ const ClaimDetail = () => {
                 <Box sx={{ position: 'absolute', left: '11px', top: '24px', bottom: '-24px', width: '2px', bgcolor: 'grey.300' }} />
               )}
               <Box sx={{
-                width: 24, height: 24, borderRadius: '50%',
+                width: 24, height: 24, flexShrink: 0, borderRadius: '50%',
                 bgcolor: STATUS_COLORS[event.toStatus] || 'primary.main',
                 mr: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'white', zIndex: 1
               }}>
                 <CheckCircleIcon sx={{ fontSize: 16 }} />
               </Box>
-              <Box>
+              <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
                 <Typography variant="body1" fontWeight="bold">
                   {event.toStatus.replace('_', ' ')}
                 </Typography>
@@ -339,11 +339,11 @@ const ClaimDetail = () => {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent dividers sx={{ minHeight: 400, p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: 'grey.100' }}>
+        <DialogContent dividers sx={{ minHeight: { xs: 300, md: 400 }, height: { xs: '70dvh', md: viewerType === 'application/pdf' ? '600px' : 'auto' }, p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: 'grey.100' }}>
           {viewerType.startsWith('image/') ? (
             <img src={viewerUrl} alt="Evidence" style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain' }} />
           ) : viewerType === 'application/pdf' ? (
-            <iframe src={viewerUrl} title="PDF Viewer" width="100%" height="600px" style={{ border: 'none' }} />
+            <iframe src={viewerUrl} title="PDF Viewer" width="100%" height="100%" style={{ border: 'none' }} />
           ) : (
             <Box sx={{ p: 4, textAlign: 'center' }}>
               <Typography gutterBottom>Cannot preview this file type directly ({viewerType}).</Typography>
@@ -361,8 +361,10 @@ const ClaimDetail = () => {
         onClose={() => setSubmitSuccessModal(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{
-          sx: { borderRadius: 3, p: 1, textAlign: 'center' }
+        slotProps={{
+          paper: {
+            sx: { borderRadius: 3, p: 1, textAlign: 'center' },
+          },
         }}
       >
         <DialogTitle sx={{ pt: 3 }}>

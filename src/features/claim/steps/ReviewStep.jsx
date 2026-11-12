@@ -4,12 +4,17 @@ import { Box, Typography, Divider, Grid, Paper, List, ListItem, ListItemText, Li
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { setStep } from '../claimWizardSlice';
+import { selectCurrentUser } from '../../auth/authSlice';
 import { Button } from '@mui/material';
 import { Alert } from '@mui/material';
 
 const ReviewStep = () => {
   const dispatch = useDispatch();
+  const user = useSelector(selectCurrentUser);
   const { catalogueItem, details, attachments, warnings } = useSelector((state) => state.claimWizard);
+  const studentClass = user?.student?.class;
+  const studentDept = studentClass?.department;
+  const derivedSemester = studentClass?.name?.match(/^(S\d+)/i)?.[1]?.toUpperCase() || 'S3';
 
   const handleEdit = (stepIndex) => {
     dispatch(setStep(stepIndex));
@@ -44,8 +49,8 @@ const ReviewStep = () => {
         </Box>
       )}
 
-      <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
           <Typography variant="subtitle1" fontWeight="bold">1. Activity Selection</Typography>
           <Button size="small" onClick={() => handleEdit(0)}>Edit</Button>
         </Box>
@@ -53,7 +58,7 @@ const ReviewStep = () => {
 
         {catalogueItem ? (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-            <Box>
+            <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
               <Typography variant="body2" color="textSecondary">Selected Activity</Typography>
               <Typography variant="body1">{catalogueItem.title}</Typography>
             </Box>
@@ -67,17 +72,35 @@ const ReviewStep = () => {
         )}
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
           <Typography variant="subtitle1" fontWeight="bold">2. Activity Details</Typography>
           <Button size="small" onClick={() => handleEdit(1)}>Edit</Button>
         </Box>
         <Divider sx={{ mb: 2 }} />
 
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-          <Box sx={{ gridColumn: '1 / -1' }}>
+          <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+            <Typography variant="body2" color="textSecondary">Student</Typography>
+            <Typography variant="body1">{user?.fullName ? `${user.fullName} (${user.username})` : user?.username || '—'}</Typography>
+          </Box>
+          <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+            <Typography variant="body2" color="textSecondary">Department & Class</Typography>
+            <Typography variant="body1">
+              {[studentDept?.code || studentDept?.name, studentClass?.name].filter(Boolean).join(' • ') || '—'}
+            </Typography>
+          </Box>
+          <Box sx={{ gridColumn: '1 / -1', minWidth: 0, overflowWrap: 'anywhere' }}>
             <Typography variant="body2" color="textSecondary">Title / Name of Event</Typography>
             <Typography variant="body1">{details.title || '—'}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="textSecondary">Semester</Typography>
+            <Typography variant="body1">{details.semester || derivedSemester}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="textSecondary">Academic Year</Typography>
+            <Typography variant="body1">{details.academicYear || '2026-2027'}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" color="textSecondary">Start Date</Typography>
@@ -87,9 +110,9 @@ const ReviewStep = () => {
             <Typography variant="body2" color="textSecondary">End Date</Typography>
             <Typography variant="body1">{details.endDate || '—'}</Typography>
           </Box>
-          <Box sx={{ gridColumn: '1 / -1' }}>
+          <Box sx={{ gridColumn: '1 / -1', minWidth: 0, overflowWrap: 'anywhere' }}>
             <Typography variant="body2" color="textSecondary">Description</Typography>
-            <Typography variant="body1">{details.description || '—'}</Typography>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{details.description || '—'}</Typography>
           </Box>
 
           {catalogueItem?.pointsPerUnit > 0 && (
@@ -108,8 +131,8 @@ const ReviewStep = () => {
         </Box>
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
           <Typography variant="subtitle1" fontWeight="bold">3. Attachments</Typography>
           <Button size="small" onClick={() => handleEdit(2)}>Edit</Button>
         </Box>
@@ -123,6 +146,7 @@ const ReviewStep = () => {
                   <InsertDriveFileIcon color="action" />
                 </ListItemIcon>
                 <ListItemText
+                  sx={{ minWidth: 0, '& .MuiListItemText-primary': { overflowWrap: 'anywhere' } }}
                   primary={file.name}
                   secondary={`${(file.size / 1024 / 1024).toFixed(2)} MB`}
                 />

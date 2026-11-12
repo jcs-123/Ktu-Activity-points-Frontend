@@ -26,11 +26,11 @@ const SubmitStep = () => {
     const hasAttachments = attachments && attachments.length > 0;
 
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4, mb: 4 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: { xs: 2, sm: 4 }, mb: { xs: 2, sm: 4 }, px: { xs: 1, sm: 2 } }}>
         <Typography variant="h6" gutterBottom>Ready to Submit?</Typography>
         
         {!hasAttachments ? (
-          <Paper sx={{ p: 3, mb: 3, bgcolor: '#FFEBEE', border: '1px solid #FFCDD2', borderRadius: 2, textAlign: 'center', maxWidth: 450 }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, bgcolor: '#FFEBEE', border: '1px solid #FFCDD2', borderRadius: 2, textAlign: 'center', width: '100%', maxWidth: 450 }}>
             <Typography variant="body1" color="error" fontWeight="bold" gutterBottom>
               ⚠️ Proof Document Required
             </Typography>
@@ -39,7 +39,7 @@ const SubmitStep = () => {
             </Typography>
           </Paper>
         ) : (
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 4, textAlign: 'center' }}>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: { xs: 3, sm: 4 }, textAlign: 'center' }}>
             Your claim with <strong>{attachments.length} attached proof file(s)</strong> is ready. Click below to submit.
           </Typography>
         )}
@@ -50,6 +50,7 @@ const SubmitStep = () => {
           size="large" 
           disabled={!hasAttachments}
           onClick={handleConfirmSubmit}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           Confirm & Submit Claim
         </Button>
@@ -59,22 +60,22 @@ const SubmitStep = () => {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 8, mb: 8 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: { xs: 4, sm: 8 }, mb: { xs: 4, sm: 8 }, px: 2 }}>
         <CircularProgress size={60} sx={{ mb: 3 }} />
         <Typography variant="h6">Submitting your claim...</Typography>
-        <Typography variant="body2" color="textSecondary">Please do not refresh the page.</Typography>
+        <Typography variant="body2" color="textSecondary" align="center">Please do not refresh the page.</Typography>
       </Box>
     );
   }
 
   if (isError) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center', maxWidth: 500, mx: 'auto', mt: 4, borderTop: '4px solid #f44336' }}>
+      <Paper sx={{ p: { xs: 2.5, sm: 4 }, textAlign: 'center', width: '100%', maxWidth: 500, mx: 'auto', mt: { xs: 2, sm: 4 }, borderTop: '4px solid #f44336' }}>
         <ErrorOutlineIcon color="error" sx={{ fontSize: 60, mb: 2 }} />
         <Typography variant="h5" color="error" gutterBottom>
           Submission Failed
         </Typography>
-        <Typography variant="body1" sx={{ mb: 3 }}>
+        <Typography variant="body1" sx={{ mb: 3, overflowWrap: 'anywhere' }}>
           {error?.data?.error?.message || 'An unexpected error occurred while submitting your claim.'}
         </Typography>
         <Button variant="outlined" onClick={handleStartNew}>
@@ -85,7 +86,7 @@ const SubmitStep = () => {
   }
 
   return (
-    <Paper sx={{ p: 4, textAlign: 'center', maxWidth: 500, mx: 'auto', mt: 4, borderTop: '4px solid #4caf50' }}>
+    <Paper sx={{ p: { xs: 2.5, sm: 4 }, textAlign: 'center', width: '100%', maxWidth: 500, mx: 'auto', mt: { xs: 2, sm: 4 }, borderTop: '4px solid #4caf50' }}>
       <CheckCircleOutlineIcon color="success" sx={{ fontSize: 60, mb: 2 }} />
       <Typography variant="h5" color="success.main" gutterBottom>
         Claim Submitted Successfully!

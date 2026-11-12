@@ -15,14 +15,15 @@ import {
 import {
   Menu as MenuIcon, Dashboard, NoteAdd, Assignment,
   RateReview, Assessment, Leaderboard, People,
-  History, Notifications, School, PersonAdd,
+  History, Notifications, School,
   Logout, ChevronLeft, BarChart, Description,
-  AdminPanelSettings, CalendarMonth, Warning,
+  AdminPanelSettings, CalendarMonth, Warning, LockReset,
 } from '@mui/icons-material';
 import { selectCurrentUser, selectUserRoles, clearCredentials } from '../../features/auth/authSlice';
 import { useLogoutMutation } from '../../api/authApi';
 import { useGetNotificationsQuery } from '../../api/notificationApi';
 import { claimApi } from '../../api/claimApi';
+import ChangePasswordDialog from '../../features/auth/ChangePasswordDialog';
 
 const DRAWER_WIDTH = 260;
 
@@ -79,9 +80,8 @@ const getNavItems = (roles = []) => {
   if (roles.includes('ADMIN')) {
     items.push(
       { divider: true, label: 'Administration' },
-      { label: 'Catalogue', icon: <AdminPanelSettings />, path: '/admin/catalogue' },
       { label: 'Users', icon: <People />, path: '/admin/users' },
-      { label: 'Bulk Student Logins', icon: <PersonAdd />, path: '/admin/users/bulk' },
+      { label: 'Catalogue', icon: <AdminPanelSettings />, path: '/admin/catalogue' },
       { label: 'Semesters', icon: <CalendarMonth />, path: '/admin/semesters' },
       { label: 'Audit Log', icon: <History />, path: '/admin/audit' },
     );
@@ -111,24 +111,25 @@ const AppLayout = () => {
     savedDrawer !== null ? savedDrawer === 'true' : !isMobile
   );
   const [anchorEl, setAnchorEl] = useState(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
-  // Sync drawer with screen size changes (mobile/desktop switch)
+  // Sync drawer with screen size changes (mobile/desktop switch without overwriting desktop pref)
   useEffect(() => {
     if (isMobile) {
       setDrawerOpen(false);
-      localStorage.setItem('sidebarOpen', 'false');
     } else {
-      // On desktop, restore saved preference (default open)
       const saved = localStorage.getItem('sidebarOpen');
       setDrawerOpen(saved !== null ? saved === 'true' : true);
     }
   }, [isMobile]);
 
-  // Persist drawer toggle
+  // Persist drawer toggle only on desktop
   const toggleDrawer = () => {
     const next = !drawerOpen;
     setDrawerOpen(next);
-    localStorage.setItem('sidebarOpen', String(next));
+    if (!isMobile) {
+      localStorage.setItem('sidebarOpen', String(next));
+    }
   };
 
   const navItems = getNavItems(roles);
@@ -232,10 +233,29 @@ const AppLayout = () => {
             <Typography variant="body2" fontWeight={600} noWrap>
               {user?.fullName || 'User'}
             </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {roles.join(', ')}
+            <Typography variant="caption" color="text.secondary" noWrap display="block">
+              {user?.student?.class?.department
+                ? `${user.student.class.name} • ${user.student.class.department.code || user.student.class.department.name}`
+                : roles.join(', ')}
             </Typography>
+            {user?.student?.class?.department?.name && (
+              <Typography variant="caption" color="text.secondary" noWrap display="block" title={user.student.class.department.name}>
+                {user.student.class.department.name}
+              </Typography>
+            )}
           </Box>
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => {
+              setPasswordDialogOpen(true);
+              if (isMobile) setDrawerOpen(false);
+            }}
+            aria-label="Reset / Change Password"
+            title="Reset / Change Password"
+          >
+            <LockReset fontSize="small" />
+          </IconButton>
         </Box>
       </Box>
     </Box>
@@ -248,11 +268,13 @@ const AppLayout = () => {
         variant={isMobile ? 'temporary' : 'persistent'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        ModalProps={isMobile ? { keepMounted: true } : undefined}
         sx={{
-          width: drawerOpen ? DRAWER_WIDTH : 0,
+          width: !isMobile && drawerOpen ? DRAWER_WIDTH : 0,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
+            maxWidth: '82vw',
             boxSizing: 'border-box',
           },
         }}
@@ -261,7 +283,7 @@ const AppLayout = () => {
       </Drawer>
 
       {/* Main Content */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         {/* TopBar */}
         <AppBar
           position="sticky"
@@ -269,26 +291,38 @@ const AppLayout = () => {
           elevation={0}
           sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
         >
-          <Toolbar>
+          <Toolbar sx={{ px: { xs: 1.5, sm: 2.5 }, gap: 1 }}>
             <IconButton
               edge="start"
               onClick={toggleDrawer}
-              sx={{ mr: 2 }}
+              aria-label="Toggle navigation menu"
             >
               <MenuIcon />
             </IconButton>
 
+            {(isMobile || !drawerOpen) && (
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                color="primary"
+                noWrap
+                sx={{ minWidth: 0 }}
+              >
+                Activity Points
+              </Typography>
+            )}
+
             <Box sx={{ flex: 1 }} />
 
             {/* Notifications */}
-            <IconButton onClick={() => navigate('/notifications')}>
+            <IconButton onClick={() => navigate('/notifications')} aria-label="Notifications">
               <Badge badgeContent={unreadCount} color="error">
                 <Notifications />
               </Badge>
             </IconButton>
 
             {/* User menu */}
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
+            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 0.5 }} aria-label="Account menu">
               <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32, fontSize: 14 }}>
                 {user?.fullName?.charAt(0) || 'U'}
               </Avatar>
@@ -299,14 +333,40 @@ const AppLayout = () => {
               open={Boolean(anchorEl)}
               onClose={() => setAnchorEl(null)}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              slotProps={{
+                paper: {
+                  sx: { maxWidth: { xs: 'calc(100vw - 24px)', sm: 340 } },
+                },
+              }}
             >
-              <MenuItem disabled>
-                <Typography variant="body2" fontWeight={600}>{user?.fullName}</Typography>
+              <MenuItem disabled sx={{ whiteSpace: 'normal' }}>
+                <Typography variant="body2" fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>
+                  {user?.fullName}
+                </Typography>
               </MenuItem>
-              <MenuItem disabled>
-                <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
+              <MenuItem disabled sx={{ whiteSpace: 'normal' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+                  {user?.email}
+                </Typography>
               </MenuItem>
+              {user?.student?.class?.department && (
+                <MenuItem disabled sx={{ whiteSpace: 'normal' }}>
+                  <Typography variant="caption" color="primary.main" fontWeight={600} sx={{ whiteSpace: 'normal' }}>
+                    {user.student.class.name} • {user.student.class.department.code ? `${user.student.class.department.code} — ` : ''}{user.student.class.department.name}
+                  </Typography>
+                </MenuItem>
+              )}
               <Divider />
+              <MenuItem
+                onClick={() => {
+                  setAnchorEl(null);
+                  setPasswordDialogOpen(true);
+                }}
+              >
+                <ListItemIcon><LockReset fontSize="small" /></ListItemIcon>
+                Reset / Change Password
+              </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <ListItemIcon><Logout fontSize="small" /></ListItemIcon>
                 Sign Out
@@ -316,10 +376,16 @@ const AppLayout = () => {
         </AppBar>
 
         {/* Page Content */}
-        <Box sx={{ flex: 1, bgcolor: 'background.default', overflow: 'auto' }}>
+        <Box component="main" sx={{ flex: 1, minWidth: 0, bgcolor: 'background.default', overflowX: 'hidden' }}>
           <Outlet />
         </Box>
       </Box>
+
+      <ChangePasswordDialog
+        open={passwordDialogOpen}
+        onClose={() => setPasswordDialogOpen(false)}
+        username={user?.username}
+      />
     </Box>
   );
 };

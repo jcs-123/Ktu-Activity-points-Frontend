@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
   Box, Card, CardContent, TextField, Button, Typography,
@@ -48,7 +48,7 @@ const LoginPage = () => {
 
       // Redirect based on role
       if (result.roles.includes('ADMIN')) {
-        navigate('/admin/catalogue');
+        navigate('/admin/users');
       } else if (result.roles.includes('PRINCIPAL')) {
         navigate('/principal/dashboard');
       } else if (result.roles.includes('SFA')) {
@@ -66,13 +66,16 @@ const LoginPage = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         background: 'linear-gradient(135deg, #1F3864 0%, #2E5090 50%, #1F3864 100%)',
         position: 'relative',
-        overflow: 'hidden',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        py: { xs: 2.5, sm: 4 },
+        px: { xs: 1.5, sm: 2 },
       }}
     >
       {/* Background pattern */}
@@ -87,7 +90,6 @@ const LoginPage = () => {
         sx={{
           width: '100%',
           maxWidth: 440,
-          mx: 2,
           borderRadius: 3,
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           position: 'relative',
@@ -101,7 +103,7 @@ const LoginPage = () => {
           borderRadius: '12px 12px 0 0',
         }} />
 
-        <CardContent sx={{ p: 4 }}>
+        <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
           {/* Logo & Institution Name */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <Box
@@ -151,8 +153,10 @@ const LoginPage = () => {
               onChange={handleChange}
               autoFocus
               autoComplete="username"
-              InputProps={{
-                sx: { borderRadius: 2 },
+              slotProps={{
+                input: {
+                  sx: { borderRadius: 2 },
+                },
               }}
             />
 
@@ -166,19 +170,21 @@ const LoginPage = () => {
               value={formData.password}
               onChange={handleChange}
               autoComplete="current-password"
-              InputProps={{
-                sx: { borderRadius: 2 },
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      size="small"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  sx: { borderRadius: 2 },
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
 
@@ -206,7 +212,8 @@ const LoginPage = () => {
 
             <Box sx={{ textAlign: 'center' }}>
               <Link
-                href="/forgot-password"
+                component={RouterLink}
+                to="/forgot-password"
                 variant="body2"
                 color="primary"
                 underline="hover"
@@ -221,7 +228,7 @@ const LoginPage = () => {
         <Box sx={{
           borderTop: '1px solid',
           borderColor: 'divider',
-          px: 4,
+          px: { xs: 2.5, sm: 4 },
           py: 2,
           textAlign: 'center',
           bgcolor: 'grey.50',

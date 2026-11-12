@@ -13,7 +13,10 @@
   box-sizing: border-box;
 }
 
+html,
 body {
+  max-width: 100%;
+  overflow-x: hidden;
   font-family: 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -50,6 +53,7 @@ body {
   /* Hide MUI App Bar, Drawer Sidebar, Header, Navigation, and Action Buttons */
   .MuiAppBar-root,
   .MuiDrawer-root,
+  .MuiDrawer-paper,
   header,
   nav,
   button,
@@ -57,35 +61,39 @@ body {
     display: none !important;
   }
 
-  /* Reset main container layout for 100% full-width document printing */
-  main, 
-  .MuiBox-root {
+  /* Reset main container layout without collapsing flex/grid children */
+  main {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    box-shadow: none !important;
-    background: transparent !important;
+    overflow: visible !important;
   }
 
   /* Remove heavy shadows & borders from Paper containers */
   .MuiPaper-root {
     box-shadow: none !important;
     border: none !important;
-    padding: 0 !important;
   }
 
-  /* Ensure summary cards and tables fit nicely */
+  /* Ensure summary cards preserve readability */
   .MuiCard-root {
     border: 1px solid #ddd !important;
     box-shadow: none !important;
-    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   /* Table styling for crisp print readability */
+  .MuiTableContainer-root {
+    overflow: visible !important;
+  }
+
   table {
     width: 100% !important;
+    min-width: 0 !important;
     border-collapse: collapse !important;
+    font-size: 9pt !important;
   }
 
   tr, td, th {
@@ -93,8 +101,8 @@ body {
   }
 
   @page {
-    size: A4 portrait;
-    margin: 15mm 15mm 15mm 15mm;
+    size: A4;
+    margin: 12mm;
   }
 }
 

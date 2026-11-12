@@ -4,13 +4,12 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE = import.meta.env.VITE_API_URL || ' https://ktu-activity-points-backend-2.onrender.com/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ktu-activity-points-backend-2.onrender.com/api/v1';
 
 export const reportApi = createApi({
   reducerPath: 'reportApi',
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_BASE}/reports`,
-    credentials: 'include',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('accessToken');
       if (token) {

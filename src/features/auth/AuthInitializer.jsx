@@ -11,9 +11,12 @@ import { setCredentials, clearCredentials, setLoading } from './authSlice';
 
 const AuthInitializer = ({ children }) => {
   const dispatch = useDispatch();
+  const token = localStorage.getItem('accessToken');
 
-  // Fire /me immediately on mount; cookie is sent automatically
-  const { data, isSuccess, isError, isLoading } = useGetMeQuery();
+  // Verify and hydrate session if token is stored in localStorage
+  const { data, isSuccess, isError, isLoading } = useGetMeQuery(undefined, {
+    skip: !token,
+  });
 
   useEffect(() => {
     if (isLoading) {

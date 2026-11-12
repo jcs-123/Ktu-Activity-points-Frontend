@@ -9,6 +9,8 @@ const initialState = {
     description: '',
     startDate: '',
     endDate: '',
+    semester: '',
+    academicYear: '2026-2027',
     hours: '',
     pointsClaimed: '',
   },

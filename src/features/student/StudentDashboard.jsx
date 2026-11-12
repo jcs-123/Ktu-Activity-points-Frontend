@@ -28,7 +28,7 @@ const GroupProgressCard = ({ label, groupCode, points, required, credit }) => {
   return (
     <Card sx={{ height: '100%', borderRadius: 3, transition: 'transform 0.2s, box-shadow 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 } }}>
       <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
           <Typography variant="h6" color="primary" fontWeight={700}>{label}</Typography>
           {credit ? (
             <Chip label="Credit Earned ✓" color="success" size="small" sx={{ fontWeight: 700 }} />
@@ -50,7 +50,7 @@ const GroupProgressCard = ({ label, groupCode, points, required, credit }) => {
           color={credit ? 'success' : percentage >= 75 ? 'primary' : 'warning'}
           sx={{ height: 10, borderRadius: 5, mb: 1 }}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
           <Typography variant="caption" color="text.secondary" fontWeight={500}>
             {percentage.toFixed(0)}% Completed
           </Typography>
@@ -69,7 +69,10 @@ const StudentDashboard = () => {
   const { data: scoreData, isLoading: isLoadingScore } = useGetMyScoreQuery();
   const { data: claimsData } = useListClaimsQuery({ per_page: 5 });
 
-  const userCategory = user?.studentProfile?.category || user?.category;
+  const userCategory = user?.student?.category || user?.studentProfile?.category || user?.category;
+  const studentClass = user?.student?.class;
+  const studentDept = studentClass?.department;
+  const studentBatch = studentClass?.batch;
   const defaultRequiredTotal = userCategory === 'LATERAL_ENTRY' ? 90 : userCategory === 'PWD' ? 60 : 120;
   const defaultRequiredPerGroup = userCategory === 'LATERAL_ENTRY' ? 30 : userCategory === 'PWD' ? 20 : 40;
 
@@ -95,12 +98,12 @@ const StudentDashboard = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 3 } }}>
       {/* Premium Glassmorphic Hero Banner */}
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2.5, md: 3.5 },
+          p: { xs: 2, sm: 2.5, md: 3.5 },
           mb: 3,
           borderRadius: 3,
           background: isLateralEntry
@@ -147,6 +150,45 @@ const StudentDashboard = () => {
                 />
               )}
             </Box>
+            {(studentDept || studentClass || user?.username) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                {studentDept && (
+                  <Chip
+                    label={`${studentDept.code ? `${studentDept.code} — ` : ''}${studentDept.name}`}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255, 255, 255, 0.18)',
+                      color: 'white',
+                      fontWeight: 700,
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                    }}
+                  />
+                )}
+                {studentClass?.name && (
+                  <Chip
+                    label={`Class: ${studentClass.name}${studentBatch?.name ? ` (${studentBatch.name})` : ''}`}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255, 255, 255, 0.12)',
+                      color: 'white',
+                      fontWeight: 600,
+                    }}
+                  />
+                )}
+                {user?.username && (
+                  <Chip
+                    label={`Admission No: ${user.username}`}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255, 255, 255, 0.12)',
+                      color: 'white',
+                      fontWeight: 600,
+                      fontFamily: 'monospace',
+                    }}
+                  />
+                )}
+              </Box>
+            )}
             <Typography variant="body1" sx={{ opacity: 0.85, fontWeight: 500 }}>
               KTU Activity Points System • {isLateralEntry ? 'B.Tech Lateral Entry Curriculum (90 Points Target Scheme)' : 'Regular 4-Year B.Tech Curriculum (120 Points Scheme)'}
             </Typography>
@@ -155,10 +197,12 @@ const StudentDashboard = () => {
           <Box sx={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            width: { xs: '100%', md: 'auto' },
             gap: 2,
             bgcolor: 'rgba(255, 255, 255, 0.12)',
             backdropFilter: 'blur(12px)',
-            px: 3,
+            px: { xs: 2, sm: 3 },
             py: 1.8,
             borderRadius: 3,
             border: '1px solid rgba(255, 255, 255, 0.25)',
@@ -215,7 +259,7 @@ const StudentDashboard = () => {
         <Box>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 <Typography variant="h6" color="primary" fontWeight={700}>
                   Submitted Claims (Group-Wise Summary)
                 </Typography>
@@ -241,10 +285,12 @@ const StudentDashboard = () => {
                     <Box sx={{
                       display: 'flex',
                       alignItems: 'center',
-                      justify: 'space-between',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 1,
                       bgcolor: '#F0F4F8',
-                      p: 1.2,
-                      px: 2,
+                      py: 1.2,
+                      px: { xs: 1.5, sm: 2 },
                       borderRadius: 1.5,
                       mb: 1.5,
                       borderLeft: '5px solid #1F3864'
@@ -267,9 +313,11 @@ const StudentDashboard = () => {
                         sx={{
                           display: 'flex',
                           justifyContent: 'space-between',
-                          alignItems: 'center',
+                          alignItems: { xs: 'flex-start', sm: 'center' },
+                          flexWrap: 'wrap',
+                          gap: 1.5,
                           py: 1.2,
-                          px: 2,
+                          px: { xs: 1.5, sm: 2 },
                           mb: 1,
                           border: '1px solid',
                           borderColor: 'divider',
@@ -279,7 +327,7 @@ const StudentDashboard = () => {
                         }}
                         onClick={() => navigate(`/claims/${claim._id}`)}
                       >
-                        <Box>
+                        <Box sx={{ minWidth: 0, flex: '1 1 200px', overflowWrap: 'anywhere' }}>
                           <Typography variant="body2" fontWeight={600}>
                             {claim.title || claim.activityOption?.label || 'Untitled Activity'}
                           </Typography>
@@ -341,24 +389,24 @@ const StudentDashboard = () => {
                 Group-Wise Summary
               </Typography>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5, mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Group I (National & Sports)</Typography>
-                <Typography variant="body2" fontWeight={700} color="primary.main">{score.group1Points} / {requiredPerGroup} pts</Typography>
+                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{score.group1Points} / {requiredPerGroup} pts</Typography>
               </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5, mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Group II (Entrepreneurship & Innovation)</Typography>
-                <Typography variant="body2" fontWeight={700} color="primary.main">{score.group2Points} / {requiredPerGroup} pts</Typography>
+                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{score.group2Points} / {requiredPerGroup} pts</Typography>
               </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5, mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">Group III (Leadership & Management)</Typography>
-                <Typography variant="body2" fontWeight={700} color="primary.main">{score.group3Points} / {requiredPerGroup} pts</Typography>
+                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{score.group3Points} / {requiredPerGroup} pts</Typography>
               </Box>
 
               <Divider sx={{ my: 1.5 }} />
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="body2" fontWeight={600} color="text.primary">Total Approved Score</Typography>
                 <Typography variant="body2" fontWeight={800} color="success.main">{score.totalPoints} / {requiredTotal} pts</Typography>
               </Box>
@@ -372,7 +420,7 @@ const StudentDashboard = () => {
                 <Typography variant="body2" color="text.secondary">Credits Earned</Typography>
                 <Typography variant="body2" fontWeight={700}>{score.creditsEarned}/3</Typography>
               </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="body2" color="text.secondary">Degree Eligibility</Typography>
                 <Chip
                   label={score.isEligible ? 'Eligible' : 'In Progress'}

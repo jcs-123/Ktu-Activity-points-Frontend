@@ -5,12 +5,7 @@ import {
 } from '@mui/material';
 import { 
   Assessment, 
-  CheckCircle, 
-  HourglassEmpty, 
-  TrendingUp, 
-  School,
   Equalizer,
-  PieChart as PieChartIcon
 } from '@mui/icons-material';
 import { useGetExecutiveSummaryQuery } from '../../api/reportApi';
 
@@ -35,11 +30,11 @@ const AnalyticsPage = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, margin: '0 auto' }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 }, maxWidth: 1400, margin: '0 auto' }}>
       {/* Page Title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-        <Assessment sx={{ fontSize: 48, color: '#1F3864' }} />
-        <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, mb: { xs: 3, md: 4 }, flexWrap: 'wrap' }}>
+        <Assessment sx={{ fontSize: { xs: 36, sm: 48 }, color: '#1F3864', flexShrink: 0 }} />
+        <Box sx={{ minWidth: 0 }}>
           <Typography variant="h4" fontWeight="bold" color="#1F3864" gutterBottom>
             Institutional Activity Points Analytics
           </Typography>
@@ -50,8 +45,8 @@ const AnalyticsPage = () => {
       </Box>
 
       {/* Top Metric Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: { xs: 3, md: 4 } }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: '#F0F9FF', borderLeft: '6px solid #0284C7' }}>
             <CardContent>
               <Typography variant="caption" color="text.secondary" fontWeight={700}>TOTAL ENROLLED STUDENTS</Typography>
@@ -61,7 +56,7 @@ const AnalyticsPage = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: '#F0FDF4', borderLeft: '6px solid #10B981' }}>
             <CardContent>
               <Typography variant="caption" color="text.secondary" fontWeight={700}>CREDIT ELIGIBILITY RATE</Typography>
@@ -71,7 +66,7 @@ const AnalyticsPage = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: '#FEF2F2', borderLeft: '6px solid #EF4444' }}>
             <CardContent>
               <Typography variant="caption" color="text.secondary" fontWeight={700}>DEFICIENT STUDENTS</Typography>
@@ -81,7 +76,7 @@ const AnalyticsPage = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card sx={{ bgcolor: '#FFF8E1', borderLeft: '6px solid #F59E0B' }}>
             <CardContent>
               <Typography variant="caption" color="text.secondary" fontWeight={700}>TOTAL POINTS VERIFIED</Typography>
@@ -94,7 +89,7 @@ const AnalyticsPage = () => {
 
       {/* Activity Group Distribution Breakdown */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 2, height: '100%', borderTop: '4px solid #2563EB' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Equalizer color="primary" />
@@ -110,7 +105,7 @@ const AnalyticsPage = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 2, height: '100%', borderTop: '4px solid #10B981' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Equalizer color="success" />
@@ -126,7 +121,7 @@ const AnalyticsPage = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 2, height: '100%', borderTop: '4px solid #F59E0B' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Equalizer color="warning" />
@@ -144,20 +139,20 @@ const AnalyticsPage = () => {
       </Grid>
 
       {/* Departmental Progress Comparison Table */}
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
         <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
           Departmental Credit Compliance & Performance Roster
         </Typography>
         <TableContainer>
-          <Table size="small">
+          <Table size="small" sx={{ minWidth: 680 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
-                <TableCell fontWeight={700}>Department Name</TableCell>
-                <TableCell fontWeight={700}>Code</TableCell>
-                <TableCell align="center" fontWeight={700}>Enrolled Students</TableCell>
-                <TableCell align="center" fontWeight={700}>Eligible Students</TableCell>
-                <TableCell align="center" fontWeight={700}>Deficient Students</TableCell>
-                <TableCell align="center" fontWeight={700}>Eligibility Rate</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Department Name</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Code</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Enrolled Students</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Eligible Students</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Deficient Students</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700 }}>Eligibility Rate</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -170,7 +165,7 @@ const AnalyticsPage = () => {
               ) : (
                 summary.departmentStats.map((dept) => (
                   <TableRow key={dept.deptId} hover>
-                    <TableCell fontWeight={600}>{dept.name}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{dept.name}</TableCell>
                     <TableCell><Chip label={dept.code} size="small" variant="outlined" /></TableCell>
                     <TableCell align="center">{dept.totalStudents}</TableCell>
                     <TableCell align="center" sx={{ color: 'success.main', fontWeight: 'bold' }}>{dept.eligibleCount}</TableCell>

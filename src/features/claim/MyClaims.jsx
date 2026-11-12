@@ -46,7 +46,7 @@ const MyClaims = () => {
 
   if (isError) {
     return (
-      <Box sx={{ mt: 4 }}>
+      <Box sx={{ mt: 4, p: { xs: 2, sm: 3 } }}>
         <Typography color="error">Failed to load claims. Please try again.</Typography>
       </Box>
     );
@@ -56,20 +56,74 @@ const MyClaims = () => {
   const meta = data?.meta || { total: 0 };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 } }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: { xs: 2.5, md: 4 } }}>
         <Typography variant="h4" fontWeight="bold">My Claims</Typography>
         <Button 
           variant="contained" 
           startIcon={<AddIcon />}
           onClick={() => navigate('/claims/new')}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           New Claim
         </Button>
       </Box>
 
-      <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
-        <Table>
+      {/* Mobile Card List */}
+      <Box sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
+        {claims.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+            <Typography variant="body1" color="textSecondary">
+              You haven't submitted any claims yet.
+            </Typography>
+          </Paper>
+        ) : (
+          claims.map((claim) => (
+            <Paper
+              key={claim._id}
+              variant="outlined"
+              sx={{ p: 2, borderRadius: 2, cursor: 'pointer' }}
+              onClick={() => navigate(`/claims/${claim._id}`)}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ overflowWrap: 'anywhere' }}>
+                    {claim.title || claim.activityOption?.item?.title || claim.activityOption?.label || 'Untitled'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {claim.claimRef} • {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : '—'}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={(claim.status || '').replace(/_/g, ' ')}
+                  size="small"
+                  sx={{ bgcolor: STATUS_COLORS[claim.status] || '#9E9E9E', color: 'white', fontWeight: 'bold', fontSize: '0.72rem', flexShrink: 0 }}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                  <Typography variant="body2" fontWeight="bold">{claim.claimedPoints} pts</Typography>
+                  {claim.activityOption?.item?.head?.maxPoints && claim.claimedPoints >= claim.activityOption.item.head.maxPoints && (
+                    <Chip
+                      label={`CAPPED @ ${claim.activityOption.item.head.maxPoints}`}
+                      color="warning"
+                      size="small"
+                      sx={{ fontWeight: 'bold', fontSize: '0.68rem', height: 20 }}
+                    />
+                  )}
+                </Box>
+                <Button size="small" variant="outlined" startIcon={<Visibility />}>
+                  View
+                </Button>
+              </Box>
+            </Paper>
+          ))
+        )}
+      </Box>
+
+      {/* Tablet & Desktop Table */}
+      <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, display: { xs: 'none', sm: 'block' } }}>
+        <Table sx={{ minWidth: 620 }}>
           <TableHead sx={{ backgroundColor: 'grey.100' }}>
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold' }}>Claim Ref</TableCell>
@@ -100,7 +154,7 @@ const MyClaims = () => {
                     {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : '—'}
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                       <Typography variant="body2" fontWeight="bold">{claim.claimedPoints} pts</Typography>
                       {claim.activityOption?.item?.head?.maxPoints && claim.claimedPoints >= claim.activityOption.item.head.maxPoints && (
                         <Chip
@@ -139,6 +193,9 @@ const MyClaims = () => {
             )}
           </TableBody>
         </Table>
+      </TableContainer>
+
+      <Paper sx={{ mt: { xs: 1, sm: 0 }, borderRadius: { xs: 2, sm: '0 0 8px 8px' } }}>
         <TablePagination
           component="div"
           count={meta.total}
@@ -147,7 +204,7 @@ const MyClaims = () => {
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
-      </TableContainer>
+      </Paper>
     </Box>
   );
 };

@@ -4,13 +4,12 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE = import.meta.env.VITE_API_URL || ' https://ktu-activity-points-backend-2.onrender.com/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ktu-activity-points-backend-2.onrender.com/api/v1';
 
 export const adminApi = createApi({
   reducerPath: 'adminApi',
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_BASE}/admin`,
-    credentials: 'include',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('accessToken');
       if (token) {
@@ -34,7 +33,7 @@ export const adminApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['AdminUsers'],
+      invalidatesTags: ['AdminUsers', 'AdminClasses'],
     }),
     updateUser: builder.mutation({
       query: ({ id, ...body }) => ({
@@ -42,7 +41,7 @@ export const adminApi = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: ['AdminUsers'],
+      invalidatesTags: ['AdminUsers', 'AdminClasses'],
     }),
     bulkImportStudents: builder.mutation({
       query: (body) => ({
@@ -50,7 +49,7 @@ export const adminApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['AdminUsers'],
+      invalidatesTags: ['AdminUsers', 'AdminClasses'],
     }),
     getClasses: builder.query({
       query: () => '/classes',
@@ -62,7 +61,7 @@ export const adminApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['AdminClasses'],
+      invalidatesTags: ['AdminClasses', 'AdminUsers'],
     }),
     getDepartments: builder.query({
       query: () => '/departments',

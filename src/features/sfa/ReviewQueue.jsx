@@ -87,13 +87,19 @@ const ReviewQueue = () => {
   const meta = data?.meta || { total: 0 };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 } }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom>
         Review Queue
       </Typography>
       
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tab} onChange={(e, v) => { setTab(v); setPage(0); setSelected([]); }}>
+        <Tabs
+          value={tab}
+          onChange={(e, v) => { setTab(v); setPage(0); setSelected([]); }}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+        >
           <Tab label="Pending Review" value="ACTIONABLE" />
           <Tab label="Approved Claims" value="APPROVED" />
           <Tab label="Rejected / Reverted" value="REJECTED" />
@@ -116,8 +122,55 @@ const ReviewQueue = () => {
         </Paper>
       )}
 
-      <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
-        <Table>
+      {/* Mobile card list */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
+        {claims.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+            <Typography variant="body1" color="textSecondary">Queue is empty.</Typography>
+          </Paper>
+        ) : (
+          claims.map((claim) => (
+            <Paper key={claim._id} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+                  <Checkbox
+                    size="small"
+                    checked={selected.includes(claim._id)}
+                    onChange={() => handleSelect(claim._id)}
+                    sx={{ p: 0.5 }}
+                  />
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle2" fontWeight="bold" sx={{ overflowWrap: 'anywhere' }}>
+                      {claim.student?.user?.fullName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {claim.student?.admissionNo} • {claim.claimRef}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Chip
+                  label={claim.status.replace('_', ' ')}
+                  size="small"
+                  sx={{ bgcolor: STATUS_COLORS[claim.status] || '#9E9E9E', color: 'white', fontWeight: 'bold', fontSize: '0.72rem', flexShrink: 0 }}
+                />
+              </Box>
+              <Typography variant="body2" sx={{ mb: 1.5, overflowWrap: 'anywhere' }}>
+                {claim.title || claim.activityOption?.label || 'Untitled'}
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                <Chip label={`${claim.claimedPoints} pts`} size="small" variant="outlined" color="primary" />
+                <Button variant="outlined" size="small" startIcon={<Visibility />} onClick={() => navigate(`/review/${claim._id}`)}>
+                  Review
+                </Button>
+              </Box>
+            </Paper>
+          ))
+        )}
+      </Box>
+
+      {/* Desktop / tablet table */}
+      <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2, display: { xs: 'none', md: 'block' } }}>
+        <Table sx={{ minWidth: 720 }}>
           <TableHead sx={{ backgroundColor: 'grey.100' }}>
             <TableRow>
               <TableCell padding="checkbox">
@@ -189,6 +242,9 @@ const ReviewQueue = () => {
             )}
           </TableBody>
         </Table>
+      </TableContainer>
+
+      <Paper sx={{ mt: { xs: 1, md: 0 }, borderRadius: { xs: 2, md: '0 0 8px 8px' } }}>
         <TablePagination
           component="div"
           count={meta.total}
@@ -197,7 +253,7 @@ const ReviewQueue = () => {
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
-      </TableContainer>
+      </Paper>
     </Box>
   );
 };

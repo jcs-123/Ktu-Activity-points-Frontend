@@ -61,10 +61,10 @@ const NotificationList = () => {
   const unreadCount = data?.meta?.unreadCount || 0;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 } }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box>
+        <Box sx={{ minWidth: 0 }}>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
             Notification Centre
           </Typography>
@@ -79,6 +79,7 @@ const NotificationList = () => {
             startIcon={<DoneAll />}
             onClick={() => markAllAsRead()}
             disabled={isMarkingAll}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Mark All as Read
           </Button>
@@ -88,7 +89,7 @@ const NotificationList = () => {
       {/* Notifications Paper List */}
       <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
         {notifications.length === 0 ? (
-          <Box sx={{ p: 6, textAlign: 'center' }}>
+          <Box sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center' }}>
             <Info sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
             <Typography variant="h6" color="text.secondary">No notifications yet.</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -103,28 +104,34 @@ const NotificationList = () => {
                 <ListItem
                   sx={{
                     py: 2,
-                    px: 3,
+                    pl: { xs: 1.5, sm: 3 },
+                    pr: { xs: 6, sm: 7 },
                     bgcolor: notif.isRead ? 'background.paper' : 'rgba(33, 150, 243, 0.08)',
                     cursor: 'pointer',
+                    alignItems: 'flex-start',
                     '&:hover': {
                       bgcolor: notif.isRead ? 'grey.50' : 'rgba(33, 150, 243, 0.14)',
                     },
                   }}
                   onClick={() => handleNotificationClick(notif)}
                   secondaryAction={
-                    <IconButton edge="end">
+                    <IconButton edge="end" aria-label="Open notification">
                       <ArrowForward fontSize="small" color="action" />
                     </IconButton>
                   }
                 >
-                  <ListItemIcon sx={{ minWidth: 44 }}>
+                  <ListItemIcon sx={{ minWidth: { xs: 36, sm: 44 }, mt: 0.5 }}>
                     {TYPE_ICONS[notif.type] || TYPE_ICONS.SYSTEM}
                   </ListItemIcon>
 
                   <ListItemText
+                    slotProps={{
+                      primary: { component: 'div' },
+                      secondary: { component: 'div' },
+                    }}
                     primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <Typography variant="body1" fontWeight={notif.isRead ? 500 : 700}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 0.5 }}>
+                        <Typography variant="body1" fontWeight={notif.isRead ? 500 : 700} sx={{ overflowWrap: 'anywhere' }}>
                           {notif.title}
                         </Typography>
                         {!notif.isRead && (
@@ -134,7 +141,7 @@ const NotificationList = () => {
                     }
                     secondary={
                       <Box>
-                        <Typography variant="body2" color="text.primary" sx={{ mb: 0.5 }}>
+                        <Typography variant="body2" color="text.primary" sx={{ mb: 0.5, overflowWrap: 'anywhere' }}>
                           {notif.message}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">

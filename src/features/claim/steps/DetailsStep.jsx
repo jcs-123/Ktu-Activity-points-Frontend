@@ -1,12 +1,35 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, FormHelperText } from '@mui/material';
+import { Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, FormHelperText, Chip } from '@mui/material';
 import { updateDetails } from '../claimWizardSlice';
+import { selectCurrentUser } from '../../auth/authSlice';
+
+const SEMESTER_OPTIONS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'];
+const ACADEMIC_YEAR_OPTIONS = ['2024-2025', '2025-2026', '2026-2027', '2027-2028'];
 
 const DetailsStep = () => {
   const dispatch = useDispatch();
+  const user = useSelector(selectCurrentUser);
   const details = useSelector((state) => state.claimWizard.details);
   const selectedItem = useSelector((state) => state.claimWizard.catalogueItem);
+
+  const studentClass = user?.student?.class;
+  const studentDept = studentClass?.department;
+  const derivedSemester = studentClass?.name?.match(/^(S\d+)/i)?.[1]?.toUpperCase() || 'S3';
+
+  // Auto-populate semester & academicYear from student's class on initial load
+  React.useEffect(() => {
+    const updates = {};
+    if (!details.semester) {
+      updates.semester = derivedSemester;
+    }
+    if (!details.academicYear) {
+      updates.academicYear = '2026-2027';
+    }
+    if (Object.keys(updates).length > 0) {
+      dispatch(updateDetails(updates));
+    }
+  }, [derivedSemester, details.semester, details.academicYear, dispatch]);
 
   // Auto-populate pointsClaimed on load or when selectedItem changes
   React.useEffect(() => {
@@ -32,14 +55,25 @@ const DetailsStep = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 2 }}>
+    <Box sx={{ width: '100%', maxWidth: 600, mx: 'auto', mt: { xs: 1, sm: 2 } }}>
       <Typography variant="h6" gutterBottom>
         Activity Details
       </Typography>
 
+      {user && (studentDept || studentClass) && (
+        <Box sx={{ mb: 2, p: 1.5, bgcolor: 'rgba(16, 42, 67, 0.05)', borderRadius: 2, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+            Submitting as:
+          </Typography>
+          <Chip size="small" label={`${user.fullName || user.username} (${user.username})`} />
+          {studentDept && <Chip size="small" color="primary" variant="outlined" label={`${studentDept.code || ''} — ${studentDept.name || ''}`.replace(/^ — | — $/g, '')} />}
+          {studentClass?.name && <Chip size="small" variant="outlined" label={`Class: ${studentClass.name}`} />}
+        </Box>
+      )}
+
       {selectedItem && (
         <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(33, 150, 243, 0.1)', borderRadius: 2 }}>
-          <Typography variant="subtitle2" color="primary">
+          <Typography variant="subtitle2" color="primary" sx={{ overflowWrap: 'anywhere' }}>
             Claiming for: {selectedItem.title}
           </Typography>
           <Typography variant="body2">
@@ -48,7 +82,7 @@ const DetailsStep = () => {
         </Box>
       )}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 2, sm: 3 } }}>
         <Box sx={{ gridColumn: '1 / -1' }}>
           <TextField
             required
@@ -56,8 +90,40 @@ const DetailsStep = () => {
             label="Title / Name of Event"
             value={details.title}
             onChange={handleChange('title')}
-            placeholder="e.g. NPTEL Python Course, TechFest 2024"
+            placeholder="e.g. NPTEL Python Course, TechFest 2026"
           />
+        </Box>
+
+        <Box>
+          <FormControl fullWidth required>
+            <InputLabel id="claim-semester-label">Semester</InputLabel>
+            <Select
+              labelId="claim-semester-label"
+              value={details.semester || derivedSemester}
+              label="Semester"
+              onChange={handleChange('semester')}
+            >
+              {SEMESTER_OPTIONS.map((sem) => (
+                <MenuItem key={sem} value={sem}>{sem}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box>
+          <FormControl fullWidth required>
+            <InputLabel id="claim-academic-year-label">Academic Year</InputLabel>
+            <Select
+              labelId="claim-academic-year-label"
+              value={details.academicYear || '2026-2027'}
+              label="Academic Year"
+              onChange={handleChange('academicYear')}
+            >
+              {ACADEMIC_YEAR_OPTIONS.map((yr) => (
+                <MenuItem key={yr} value={yr}>{yr}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         <Box>
@@ -106,11 +172,13 @@ const DetailsStep = () => {
                 value={details.skillingCourseId || ''}
                 label="Approved Skilling Course"
                 onChange={handleChange('skillingCourseId')}
+                MenuProps={{ slotProps: { paper: { sx: { maxWidth: 'calc(100vw - 32px)' } } } }}
+                sx={{ '& .MuiSelect-select': { whiteSpace: 'normal' } }}
               >
-                <MenuItem value=""><em>-- Select Approved Skilling Course --</em></MenuItem>
-                <MenuItem value="6a744fd806f8f5bed47f76dd">Introduction to Python programming (40 Hours)</MenuItem>
-                <MenuItem value="6a744fd806f8f5bed47f76de">AI/ML Fundamentals (30 Hours)</MenuItem>
-                <MenuItem value="6a744fd806f8f5bed47f76df">Web Development Bootcamp (48 Hours)</MenuItem>
+                <MenuItem value="" sx={{ whiteSpace: 'normal' }}><em>-- Select Approved Skilling Course --</em></MenuItem>
+                <MenuItem value="6a744fd806f8f5bed47f76dd" sx={{ whiteSpace: 'normal' }}>Introduction to Python programming (40 Hours)</MenuItem>
+                <MenuItem value="6a744fd806f8f5bed47f76de" sx={{ whiteSpace: 'normal' }}>AI/ML Fundamentals (30 Hours)</MenuItem>
+                <MenuItem value="6a744fd806f8f5bed47f76df" sx={{ whiteSpace: 'normal' }}>Web Development Bootcamp (48 Hours)</MenuItem>
               </Select>
               <FormHelperText>Must select an approved course from the KTU university registry</FormHelperText>
             </FormControl>

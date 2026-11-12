@@ -88,11 +88,11 @@ const SemesterConfig = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <CalendarMonth sx={{ fontSize: 40, color: 'primary.main' }} />
-          <Box>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5, md: 4 } }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 }, flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+          <CalendarMonth sx={{ fontSize: { xs: 32, sm: 40 }, color: 'primary.main', flexShrink: 0 }} />
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="h4" fontWeight="bold">
               Semester Configuration
             </Typography>
@@ -119,7 +119,7 @@ const SemesterConfig = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <Table>
+          <Table sx={{ minWidth: 680 }}>
             <TableHead sx={{ backgroundColor: 'primary.main' }}>
               <TableRow>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Semester Name</TableCell>
@@ -140,7 +140,7 @@ const SemesterConfig = () => {
               ) : (
                 semesters.map((sem) => (
                   <TableRow key={sem._id} hover>
-                    <TableCell fontWeight="bold">{sem.name}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>{sem.name}</TableCell>
                     <TableCell>{sem.academicYear}</TableCell>
                     <TableCell>{sem.submissionOpenDate ? new Date(sem.submissionOpenDate).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell>{sem.submissionCloseDate ? new Date(sem.submissionCloseDate).toLocaleDateString() : 'N/A'}</TableCell>
@@ -187,7 +187,7 @@ const SemesterConfig = () => {
             label="Submission Open Date"
             name="submissionOpenDate"
             type="date"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             value={formData.submissionOpenDate}
             onChange={handleFormChange}
           />
@@ -196,7 +196,7 @@ const SemesterConfig = () => {
             label="Submission Close Date"
             name="submissionCloseDate"
             type="date"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             value={formData.submissionCloseDate}
             onChange={handleFormChange}
           />
@@ -205,7 +205,7 @@ const SemesterConfig = () => {
             label="SFA Review Deadline"
             name="reviewDeadline"
             type="date"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             value={formData.reviewDeadline}
             onChange={handleFormChange}
           />
