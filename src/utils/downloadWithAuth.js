@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ktu-activity-points-backend-2.onrender.com/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ktuactivitypoints.jeccac.in/api/v1';
 
 /**
  * Download an authenticated backend endpoint as a Blob file.

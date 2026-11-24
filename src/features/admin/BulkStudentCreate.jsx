@@ -21,7 +21,7 @@ import {
   useCreateBatchMutation,
 } from '../../api/adminApi';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ktu-activity-points-backend-2.onrender.com/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ktuactivitypoints.jeccac.in/api/v1';
 
 const SAMPLE_CSV = `username,email,mobile,passwordHash,fullName,userType,status
 JEC25EC001,abdulhaleemps.ec25@jecc.ac.in,8848245356,1234,ABDUL HALEEM P S,Student,ACTIVE`;

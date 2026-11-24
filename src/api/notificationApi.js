@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ktu-activity-points-backend-2.onrender.com/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ktuactivitypoints.jeccac.in/api/v1';
 
 export const notificationApi = createApi({
   reducerPath: 'notificationApi',
