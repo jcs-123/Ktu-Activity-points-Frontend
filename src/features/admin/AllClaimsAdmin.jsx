@@ -5,6 +5,7 @@ import {
   Paper,
   Grid,
   Card,
+  CardActionArea,
   CardContent,
   Table,
   TableBody,
@@ -29,43 +30,41 @@ import {
   Divider,
   InputAdornment,
   Tooltip,
-  Alert,
   Stack,
 } from '@mui/material';
 import {
   Assignment,
   Search,
-  FilterList,
   Download,
   Refresh,
   CalendarToday,
-  School,
   Visibility,
   Close,
   CheckCircle,
   WarningAmber,
   Cancel,
   History,
-  InsertDriveFile,
   PictureAsPdf,
   Image as ImageIcon,
-  ArrowDownward,
-  ArrowUpward,
-  Category,
+  InsertDriveFile,
+  FilterAltOff,
+  School,
+  Apartment,
   Stars,
-  Person,
+  OpenInNew,
 } from '@mui/icons-material';
 import { useGetAllClaimsQuery } from '../../api/adminApi';
 import { useLazyGetAttachmentUrlQuery } from '../../api/claimApi';
 
+// Clean, human-readable status configuration
 const STATUS_CONFIG = {
-  SUBMITTED: { label: 'Submitted', color: 'info', icon: <WarningAmber fontSize="inherit" /> },
-  UNDER_REVIEW: { label: 'Under Review', color: 'warning', icon: <History fontSize="inherit" /> },
-  APPROVED: { label: 'Approved', color: 'success', icon: <CheckCircle fontSize="inherit" /> },
-  REJECTED: { label: 'Rejected', color: 'error', icon: <Cancel fontSize="inherit" /> },
-  REVERTED: { label: 'Returned', color: 'secondary', icon: <History fontSize="inherit" /> },
-  DRAFT: { label: 'Draft', color: 'default', icon: null },
-  WITHDRAWN: { label: 'Withdrawn', color: 'default', icon: null },
+  SUBMITTED: { label: 'Submitted', color: 'info', bgcolor: '#E0F2FE', text: '#0369A1' },
+  UNDER_REVIEW: { label: 'Under Review', color: 'warning', bgcolor: '#FEF3C7', text: '#B45309' },
+  APPROVED: { label: 'Approved', color: 'success', bgcolor: '#DCFCE7', text: '#15803D' },
+  REJECTED: { label: 'Rejected', color: 'error', bgcolor: '#FEE2E2', text: '#B91C1C' },
+  REVERTED: { label: 'Returned', color: 'secondary', bgcolor: '#F3E8FF', text: '#7E22CE' },
+  DRAFT: { label: 'Draft', color: 'default', bgcolor: '#F1F5F9', text: '#475569' },
+  WITHDRAWN: { label: 'Withdrawn', color: 'default', bgcolor: '#F1F5F9', text: '#475569' },
 };
 
 const formatDate = (dateStr) => {
@@ -74,26 +73,9 @@ const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
       day: 'numeric',
-    });
-  } catch {
-    return '—';
-  }
-};
-
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return d.toLocaleString('en-IN', {
-      year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric',
     });
   } catch {
     return '—';
@@ -101,18 +83,16 @@ const formatDateTime = (dateStr) => {
 };
 
 const AllClaimsAdmin = () => {
-  // Filter states
+  // Simple filter states
   const [department, setDepartment] = useState('ALL');
   const [status, setStatus] = useState('ALL');
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [dateField, setDateField] = useState('submittedAt');
-  const [sortOrder, setSortOrder] = useState('desc');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
-  // Modal states
+  // Modals
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState('');
@@ -126,8 +106,8 @@ const AllClaimsAdmin = () => {
     const params = {
       page: page + 1,
       limit: rowsPerPage,
-      sortOrder,
-      dateField,
+      sortOrder: 'desc',
+      dateField: 'submittedAt',
     };
     if (department && department !== 'ALL') params.department = department;
     if (status && status !== 'ALL') params.status = status;
@@ -135,7 +115,7 @@ const AllClaimsAdmin = () => {
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     return params;
-  }, [page, rowsPerPage, sortOrder, dateField, department, status, search, startDate, endDate]);
+  }, [page, rowsPerPage, department, status, search, startDate, endDate]);
 
   const { data: claimsResponse, isLoading, isFetching, refetch } = useGetAllClaimsQuery(queryParams);
 
@@ -144,71 +124,62 @@ const AllClaimsAdmin = () => {
   const stats = claimsResponse?.stats || {};
   const departments = claimsResponse?.departments || [];
 
-  // Quick Date Range Presets
-  const applyDatePreset = (preset) => {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+  const pendingCount = (stats.submittedCount || 0) + (stats.underReviewCount || 0);
 
-    if (preset === 'ALL') {
+  // Quick preset helper
+  const setQuickRange = (rangeType) => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    if (rangeType === 'ALL') {
       setStartDate('');
       setEndDate('');
-    } else if (preset === 'TODAY') {
+    } else if (rangeType === 'TODAY') {
       setStartDate(todayStr);
       setEndDate(todayStr);
-    } else if (preset === '7DAYS') {
-      const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (rangeType === '30DAYS') {
+      const past = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
       setStartDate(past.toISOString().split('T')[0]);
       setEndDate(todayStr);
-    } else if (preset === '30DAYS') {
-      const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      setStartDate(past.toISOString().split('T')[0]);
-      setEndDate(todayStr);
-    } else if (preset === 'THIS_MONTH') {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (rangeType === 'THIS_MONTH') {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
       setStartDate(firstDay.toISOString().split('T')[0]);
-      setEndDate(todayStr);
-    } else if (preset === 'ACADEMIC_YEAR') {
-      const currentYear = now.getFullYear();
-      const isPastJuly = now.getMonth() >= 6;
-      const startYear = isPastJuly ? currentYear : currentYear - 1;
-      setStartDate(`${startYear}-07-01`);
       setEndDate(todayStr);
     }
     setPage(0);
   };
 
-  // Clear all filters
   const handleClearFilters = () => {
     setDepartment('ALL');
     setStatus('ALL');
     setSearch('');
     setStartDate('');
     setEndDate('');
-    setDateField('submittedAt');
-    setSortOrder('desc');
     setPage(0);
   };
 
-  // Open Proof Attachment Preview
+  const hasActiveFilters = department !== 'ALL' || status !== 'ALL' || search || startDate || endDate;
+
+  // View attachment helper
   const handleViewAttachment = async (att) => {
     try {
       const res = await triggerGetAttachmentUrl(att._id).unwrap();
       const signedUrl = res?.data?.url || res?.url;
-      if (!signedUrl) throw new Error('Attachment URL not returned.');
+      if (!signedUrl) throw new Error('Attachment URL not found');
       setViewerUrl(signedUrl);
       setViewerType(att.mimeType || 'application/pdf');
       setViewerTitle(att.originalFilename || 'Document Preview');
       setViewerOpen(true);
     } catch (err) {
-      console.error('Error fetching attachment URL:', err);
-      alert('Failed to load attachment. Please try again.');
+      console.error(err);
+      alert('Unable to load document preview. Please try again.');
     }
   };
 
-  // Export to CSV
+  // CSV Export
   const handleExportCSV = () => {
     if (!claims || claims.length === 0) {
-      alert('No claim records to export with current filters.');
+      alert('No claim records to export.');
       return;
     }
 
@@ -216,29 +187,24 @@ const AllClaimsAdmin = () => {
       'Claim Ref',
       'Student Name',
       'Admission No',
-      'KTU Reg No',
       'Department',
       'Class',
-      'Group',
-      'Item Code',
-      'Item Title',
-      'Option Label',
-      'Event / Activity Title',
+      'Activity Code',
+      'Activity Title',
+      'Option Level',
+      'Event Title',
       'Claimed Points',
       'Awarded Points',
       'Status',
-      'Submitted At',
-      'Reviewed At',
+      'Submitted Date',
     ];
 
     const rows = claims.map((c) => [
       c.claimRef || '',
       `"${(c.studentName || '').replace(/"/g, '""')}"`,
       c.admissionNo || '',
-      c.ktuRegisterNo || '',
       c.departmentCode || '',
       `"${(c.className || '').replace(/"/g, '""')}"`,
-      c.activityGroupCode || '',
       c.activityItemCode || '',
       `"${(c.activityItemTitle || '').replace(/"/g, '""')}"`,
       `"${(c.activityOptionLabel || '').replace(/"/g, '""')}"`,
@@ -246,286 +212,196 @@ const AllClaimsAdmin = () => {
       c.claimedPoints || 0,
       c.awardedPoints || 0,
       c.status || '',
-      c.submittedAt ? formatDateTime(c.submittedAt) : '',
-      c.reviewedAt ? formatDateTime(c.reviewedAt) : '',
+      c.submittedAt ? formatDate(c.submittedAt) : 'Draft',
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `all_submitted_claims_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `claims_export_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <Box sx={{ p: { xs: 1.5, sm: 3 }, maxWidth: 1600, mx: 'auto' }}>
-      {/* Top Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexWrap: 'wrap', gap: 2, mb: 3 }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 1500, mx: 'auto' }}>
+      {/* 1. Header with Title & Action Buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Assignment color="primary" sx={{ fontSize: 32 }} />
-            <Typography variant="h5" fontWeight={700} color="#1F3864">
-              All Submitted Claims
-            </Typography>
-          </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Master audit list of student activity point claims sorted across date ranges and departments.
+          <Typography variant="h5" fontWeight={800} color="#1E293B">
+            Student Claims List
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            View and audit all student activity point submissions across all departments.
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" spacing={1.5}>
           <Button
             variant="outlined"
+            size="small"
             startIcon={<Refresh />}
             onClick={() => refetch()}
             disabled={isFetching}
-            size="small"
+            sx={{ textTransform: 'none', borderRadius: 1.5 }}
           >
             Refresh
           </Button>
           <Button
             variant="contained"
             color="primary"
+            size="small"
             startIcon={<Download />}
             onClick={handleExportCSV}
-            size="small"
-            sx={{ fontWeight: 600 }}
+            sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 600 }}
           >
-            Export to CSV
+            Export to Excel / CSV
           </Button>
         </Stack>
       </Box>
 
-      {/* Metric Cards Summary */}
+      {/* 2. Clickable Status Cards (Instant 1-Click Filtering) */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: '#F8FAFC', borderLeft: '4px solid #1976D2' }}>
-            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                TOTAL CLAIMS
+        {/* All Claims */}
+        <Grid item xs={6} sm={3}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              cursor: 'pointer',
+              borderWidth: status === 'ALL' ? 2 : 1,
+              borderColor: status === 'ALL' ? '#1976D2' : '#E2E8F0',
+              bgcolor: status === 'ALL' ? '#EFF6FF' : '#FFFFFF',
+              transition: '0.2s',
+              '&:hover': { borderColor: '#1976D2' },
+            }}
+            onClick={() => {
+              setStatus('ALL');
+              setPage(0);
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                ALL CLAIMS
               </Typography>
-              <Typography variant="h5" fontWeight={700} color="primary.main">
+              <Typography variant="h4" fontWeight={800} color="#1E293B">
                 {stats.totalClaims || pagination.total || 0}
               </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: '#F8FAFC', borderLeft: '4px solid #0288D1' }}>
-            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                SUBMITTED / PENDING
-              </Typography>
-              <Typography variant="h5" fontWeight={700} color="#0288D1">
-                {stats.submittedCount || 0}
+              <Typography variant="caption" color="text.secondary">
+                Click to view all
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: '#F8FAFC', borderLeft: '4px solid #ED6C02' }}>
-            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                UNDER REVIEW
+        {/* Pending Review */}
+        <Grid item xs={6} sm={3}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              cursor: 'pointer',
+              borderWidth: status === 'SUBMITTED' ? 2 : 1,
+              borderColor: status === 'SUBMITTED' ? '#D97706' : '#E2E8F0',
+              bgcolor: status === 'SUBMITTED' ? '#FFFBEB' : '#FFFFFF',
+              transition: '0.2s',
+              '&:hover': { borderColor: '#D97706' },
+            }}
+            onClick={() => {
+              setStatus('SUBMITTED');
+              setPage(0);
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Typography variant="caption" color="#B45309" fontWeight={700}>
+                PENDING REVIEW
               </Typography>
-              <Typography variant="h5" fontWeight={700} color="warning.main">
-                {stats.underReviewCount || 0}
+              <Typography variant="h4" fontWeight={800} color="#D97706">
+                {pendingCount}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Submitted / Under Review
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: '#F8FAFC', borderLeft: '4px solid #2E7D32' }}>
-            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
+        {/* Approved */}
+        <Grid item xs={6} sm={3}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              cursor: 'pointer',
+              borderWidth: status === 'APPROVED' ? 2 : 1,
+              borderColor: status === 'APPROVED' ? '#16A34A' : '#E2E8F0',
+              bgcolor: status === 'APPROVED' ? '#F0FDF4' : '#FFFFFF',
+              transition: '0.2s',
+              '&:hover': { borderColor: '#16A34A' },
+            }}
+            onClick={() => {
+              setStatus('APPROVED');
+              setPage(0);
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Typography variant="caption" color="#15803D" fontWeight={700}>
                 APPROVED
               </Typography>
-              <Typography variant="h5" fontWeight={700} color="success.main">
+              <Typography variant="h4" fontWeight={800} color="#16A34A">
                 {stats.approvedCount || 0}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Points awarded
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={4} md={2.4}>
-          <Card variant="outlined" sx={{ borderRadius: 2, bgcolor: '#F8FAFC', borderLeft: '4px solid #9C27B0' }}>
-            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                CLAIMED / AWARDED PTS
+        {/* Returned / Rejected */}
+        <Grid item xs={6} sm={3}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              cursor: 'pointer',
+              borderWidth: status === 'REVERTED' || status === 'REJECTED' ? 2 : 1,
+              borderColor: status === 'REVERTED' ? '#9333EA' : '#E2E8F0',
+              bgcolor: status === 'REVERTED' ? '#FAF5FF' : '#FFFFFF',
+              transition: '0.2s',
+              '&:hover': { borderColor: '#9333EA' },
+            }}
+            onClick={() => {
+              setStatus(status === 'REVERTED' ? 'ALL' : 'REVERTED');
+              setPage(0);
+            }}
+          >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Typography variant="caption" color="#7E22CE" fontWeight={700}>
+                RETURNED / REJECTED
               </Typography>
-              <Typography variant="h6" fontWeight={700} color="#7B1FA2">
-                {stats.totalClaimedPoints || 0} / {stats.totalAwardedPoints || 0} pts
+              <Typography variant="h4" fontWeight={800} color="#7E22CE">
+                {(stats.revertedCount || 0) + (stats.rejectedCount || 0)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Needs correction or rejected
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Comprehensive Filter Controls */}
-      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2, bgcolor: '#FFFFFF' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <FilterList fontSize="small" color="primary" />
-          <Typography variant="subtitle2" fontWeight={700}>
-            Filter & Search Claims
-          </Typography>
-        </Box>
-
-        {/* Date Preset Quick Pills */}
-        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mr: 0.5 }}>
-            Date Presets:
-          </Typography>
-          {[
-            { label: 'All Time', key: 'ALL' },
-            { label: 'Today', key: 'TODAY' },
-            { label: 'Last 7 Days', key: '7DAYS' },
-            { label: 'Last 30 Days', key: '30DAYS' },
-            { label: 'This Month', key: 'THIS_MONTH' },
-            { label: 'Current Academic Year', key: 'ACADEMIC_YEAR' },
-          ].map((preset) => {
-            const isActive =
-              (preset.key === 'ALL' && !startDate && !endDate) ||
-              (preset.key === 'TODAY' && startDate === new Date().toISOString().split('T')[0] && endDate === startDate);
-            return (
-              <Chip
-                key={preset.key}
-                label={preset.label}
-                size="small"
-                variant={isActive ? 'filled' : 'outlined'}
-                color={isActive ? 'primary' : 'default'}
-                onClick={() => applyDatePreset(preset.key)}
-                sx={{ cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}
-              />
-            );
-          })}
-        </Box>
-
-        {/* Filter Inputs Grid */}
+      {/* 3. Simple Search & Filter Bar */}
+      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: '#FFFFFF' }}>
         <Grid container spacing={2} alignItems="center">
-          {/* Department Filter */}
-          <Grid item xs={12} sm={6} md={2.5}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="dept-filter-label">Department</InputLabel>
-              <Select
-                labelId="dept-filter-label"
-                value={department}
-                label="Department"
-                onChange={(e) => {
-                  setDepartment(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <MenuItem value="ALL">
-                  <em>All Departments</em>
-                </MenuItem>
-                {departments.map((dept) => (
-                  <MenuItem key={dept._id || dept.code} value={dept.code || dept._id}>
-                    {dept.code} — {dept.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Status Filter */}
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="status-filter-label">Status</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                value={status}
-                label="Status"
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <MenuItem value="ALL">All Statuses</MenuItem>
-                <MenuItem value="SUBMITTED">Submitted</MenuItem>
-                <MenuItem value="UNDER_REVIEW">Under Review</MenuItem>
-                <MenuItem value="APPROVED">Approved</MenuItem>
-                <MenuItem value="REJECTED">Rejected</MenuItem>
-                <MenuItem value="REVERTED">Returned</MenuItem>
-                <MenuItem value="DRAFT">Draft</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Date From */}
-          <Grid item xs={6} sm={3} md={2}>
-            <TextField
-              label="From Date"
-              type="date"
-              size="small"
-              fullWidth
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPage(0);
-              }}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          {/* Date To */}
-          <Grid item xs={6} sm={3} md={2}>
-            <TextField
-              label="To Date"
-              type="date"
-              size="small"
-              fullWidth
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPage(0);
-              }}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          {/* Date Field Target */}
-          <Grid item xs={6} sm={3} md={1.5}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="date-field-label">Date Basis</InputLabel>
-              <Select
-                labelId="date-field-label"
-                value={dateField}
-                label="Date Basis"
-                onChange={(e) => setDateField(e.target.value)}
-              >
-                <MenuItem value="submittedAt">Submitted Date</MenuItem>
-                <MenuItem value="createdAt">Created Date</MenuItem>
-                <MenuItem value="activityDateFrom">Activity Date</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Sort Order Toggle */}
-          <Grid item xs={6} sm={3} md={2}>
-            <Button
-              fullWidth
-              variant="outlined"
-              size="small"
-              startIcon={sortOrder === 'desc' ? <ArrowDownward /> : <ArrowUpward />}
-              onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-              sx={{ height: 40 }}
-            >
-              {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
-            </Button>
-          </Grid>
-
-          {/* Search Query */}
-          <Grid item xs={12} md={10}>
+          {/* Search by Student / Claim */}
+          <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               size="small"
-              placeholder="Search by student name, admission no, KTU reg no, claim ref (AP-...), or activity title..."
+              placeholder="Search by student name, admission no, or activity..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -548,200 +424,253 @@ const AllClaimsAdmin = () => {
             />
           </Grid>
 
-          {/* Reset Filters */}
-          <Grid item xs={12} md={2}>
-            <Button
-              fullWidth
-              variant="text"
-              color="inherit"
+          {/* Department Filter */}
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="dept-label">Department</InputLabel>
+              <Select
+                labelId="dept-label"
+                value={department}
+                label="Department"
+                onChange={(e) => {
+                  setDepartment(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="ALL">All Departments</MenuItem>
+                {departments.map((d) => (
+                  <MenuItem key={d._id || d.code} value={d.code || d._id}>
+                    {d.code} — {d.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* From Date */}
+          <Grid item xs={6} sm={3} md={2}>
+            <TextField
+              label="From Date"
+              type="date"
               size="small"
-              onClick={handleClearFilters}
-              sx={{ height: 40 }}
-            >
-              Reset Filters
-            </Button>
+              fullWidth
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPage(0);
+              }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          {/* To Date */}
+          <Grid item xs={6} sm={3} md={2}>
+            <TextField
+              label="To Date"
+              type="date"
+              size="small"
+              fullWidth
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPage(0);
+              }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
+          {/* Clear Filters */}
+          <Grid item xs={12} md={1} sx={{ textAlign: { xs: 'left', md: 'center' } }}>
+            {hasActiveFilters && (
+              <Button
+                color="secondary"
+                size="small"
+                onClick={handleClearFilters}
+                startIcon={<FilterAltOff />}
+                sx={{ textTransform: 'none', fontSize: '0.8rem' }}
+              >
+                Reset
+              </Button>
+            )}
           </Grid>
         </Grid>
+
+        {/* Quick Date Shortcuts */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5, flexWrap: 'wrap' }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={600}>
+            Date Quick Filters:
+          </Typography>
+          <Chip
+            label="All Time"
+            size="small"
+            clickable
+            variant={!startDate && !endDate ? 'filled' : 'outlined'}
+            color={!startDate && !endDate ? 'primary' : 'default'}
+            onClick={() => setQuickRange('ALL')}
+            sx={{ height: 24, fontSize: '0.72rem' }}
+          />
+          <Chip
+            label="Today"
+            size="small"
+            clickable
+            variant={startDate === new Date().toISOString().split('T')[0] ? 'filled' : 'outlined'}
+            color={startDate === new Date().toISOString().split('T')[0] ? 'primary' : 'default'}
+            onClick={() => setQuickRange('TODAY')}
+            sx={{ height: 24, fontSize: '0.72rem' }}
+          />
+          <Chip
+            label="This Month"
+            size="small"
+            clickable
+            onClick={() => setQuickRange('THIS_MONTH')}
+            sx={{ height: 24, fontSize: '0.72rem' }}
+          />
+          <Chip
+            label="Last 30 Days"
+            size="small"
+            clickable
+            onClick={() => setQuickRange('30DAYS')}
+            sx={{ height: 24, fontSize: '0.72rem' }}
+          />
+        </Box>
       </Paper>
 
-      {/* Claims Data Table */}
+      {/* 4. Claims Table (Clean, Easy to Read) */}
       <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
-        <TableContainer sx={{ maxHeight: 'calc(100vh - 380px)', minHeight: 350 }}>
-          <Table stickyHeader size="small">
+        <TableContainer sx={{ maxHeight: 'calc(100vh - 360px)', minHeight: 320 }}>
+          <Table stickyHeader size="medium">
             <TableHead>
-              <TableRow sx={{ bgcolor: '#F1F5F9' }}>
-                <TableCell sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }}>Claim Ref & Date</TableCell>
-                <TableCell sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }}>Student Information</TableCell>
-                <TableCell sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }}>Dept & Class</TableCell>
-                <TableCell sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }}>Activity & Details</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }}>Points</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }}>Status</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#F1F5F9' }}>Proof / View</TableCell>
+              <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                <TableCell sx={{ fontWeight: 700, bgcolor: '#F8FAFC', color: '#475569' }}>Student & Class</TableCell>
+                <TableCell sx={{ fontWeight: 700, bgcolor: '#F8FAFC', color: '#475569' }}>Activity Details</TableCell>
+                <TableCell sx={{ fontWeight: 700, bgcolor: '#F8FAFC', color: '#475569' }}>Submitted Date</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#F8FAFC', color: '#475569' }}>Points</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#F8FAFC', color: '#475569' }}>Status</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#F8FAFC', color: '#475569' }}>Proof & Details</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <CircularProgress size={32} />
+                  <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <CircularProgress size={30} />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Loading submitted claims...
+                      Loading claims...
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : claims.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <Assignment sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                    <Typography variant="subtitle1" fontWeight={600} color="text.secondary">
-                      No claims found
+                  <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <Assignment sx={{ fontSize: 44, color: 'text.disabled', mb: 1 }} />
+                    <Typography variant="subtitle1" fontWeight={700} color="text.secondary">
+                      No matching claims found
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Try adjusting the date range, department, or search keywords.
+                      Try clearing or changing your filters above.
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 claims.map((claim) => {
-                  const statusMeta = STATUS_CONFIG[claim.status] || {
+                  const statusInfo = STATUS_CONFIG[claim.status] || {
                     label: claim.status,
-                    color: 'default',
-                    icon: null,
+                    bgcolor: '#F1F5F9',
+                    text: '#475569',
                   };
-                  const dateToDisplay = claim.submittedAt || claim.createdAt;
                   const hasProof = claim.attachments && claim.attachments.length > 0;
+                  const displayDate = claim.submittedAt || claim.createdAt;
 
                   return (
                     <TableRow key={claim._id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                      {/* Claim Ref & Date */}
-                      <TableCell sx={{ verticalAlign: 'top', py: 1.5 }}>
-                        <Typography variant="subtitle2" fontWeight={700} color="primary.main">
-                          {claim.claimRef || '—'}
+                      {/* Student & Class */}
+                      <TableCell sx={{ verticalAlign: 'middle', py: 1.5 }}>
+                        <Typography variant="body2" fontWeight={700} color="#0F172A">
+                          {claim.studentName || 'Student'}
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                          <CalendarToday sx={{ fontSize: 13, color: 'text.secondary' }} />
-                          <Typography variant="caption" color="text.secondary">
-                            {formatDateTime(dateToDisplay)}
-                          </Typography>
-                        </Box>
-                        {!claim.submittedAt && (
-                          <Chip label="Draft Date" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', mt: 0.5 }} />
-                        )}
-                      </TableCell>
-
-                      {/* Student Info */}
-                      <TableCell sx={{ verticalAlign: 'top', py: 1.5 }}>
-                        <Typography variant="body2" fontWeight={700}>
-                          {claim.studentName || '—'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Adm: <strong>{claim.admissionNo || '—'}</strong>
-                          {claim.ktuRegisterNo && claim.ktuRegisterNo !== '—' && (
-                            <span> | Reg: {claim.ktuRegisterNo}</span>
-                          )}
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          <strong>{claim.admissionNo || '—'}</strong> • {claim.departmentCode || 'DEPT'} • {claim.className || '—'}
                         </Typography>
                       </TableCell>
 
-                      {/* Department & Class */}
-                      <TableCell sx={{ verticalAlign: 'top', py: 1.5 }}>
-                        <Chip
-                          label={claim.departmentCode || 'DEPT'}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ fontWeight: 700, height: 22, fontSize: '0.72rem' }}
-                        />
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                          {claim.className || '—'}
+                      {/* Activity Details */}
+                      <TableCell sx={{ verticalAlign: 'middle', py: 1.5, maxWidth: 350 }}>
+                        <Typography variant="body2" fontWeight={600} color="#1E293B">
+                          {claim.activityItemCode ? `${claim.activityItemCode} — ` : ''}{claim.activityItemTitle || claim.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                          Option: {claim.activityOptionLabel || claim.title || 'Standard'}
                         </Typography>
                       </TableCell>
 
-                      {/* Activity & Option */}
-                      <TableCell sx={{ verticalAlign: 'top', py: 1.5, maxWidth: 300 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Chip
-                            label={claim.activityItemCode || 'Act'}
-                            size="small"
-                            sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700, bgcolor: '#EEF2F6' }}
-                          />
-                          <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 220 }}>
-                            {claim.activityItemTitle || claim.title}
-                          </Typography>
-                        </Box>
-
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                          Option: {claim.activityOptionLabel || '—'}
+                      {/* Submitted Date */}
+                      <TableCell sx={{ verticalAlign: 'middle', py: 1.5 }}>
+                        <Typography variant="body2" color="#334155">
+                          {formatDate(displayDate)}
                         </Typography>
-
-                        {claim.title && claim.title !== claim.activityItemTitle && (
-                          <Typography variant="caption" color="primary.dark" display="block" sx={{ fontStyle: 'italic', mt: 0.2 }}>
-                            "{claim.title}"
-                          </Typography>
-                        )}
+                        <Typography variant="caption" color="text.secondary">
+                          Ref: {claim.claimRef}
+                        </Typography>
                       </TableCell>
 
                       {/* Points */}
-                      <TableCell align="center" sx={{ verticalAlign: 'top', py: 1.5 }}>
-                        <Typography variant="body2" fontWeight={700} color="primary.main">
+                      <TableCell align="center" sx={{ verticalAlign: 'middle', py: 1.5 }}>
+                        <Typography variant="body2" fontWeight={800} color="#0369A1">
                           {claim.claimedPoints} pts
                         </Typography>
                         {claim.status === 'APPROVED' && (
-                          <Chip
-                            label={`Awarded: ${claim.awardedPoints} pts`}
-                            size="small"
-                            color="success"
-                            sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, mt: 0.5 }}
-                          />
+                          <Typography variant="caption" fontWeight={700} color="#16A34A" sx={{ display: 'block' }}>
+                            Awarded: {claim.awardedPoints} pts
+                          </Typography>
                         )}
                       </TableCell>
 
-                      {/* Status */}
-                      <TableCell align="center" sx={{ verticalAlign: 'top', py: 1.5 }}>
-                        <Chip
-                          label={statusMeta.label}
-                          size="small"
-                          color={statusMeta.color}
-                          icon={statusMeta.icon}
-                          sx={{ fontWeight: 700, fontSize: '0.75rem', height: 24 }}
-                        />
+                      {/* Status Chip */}
+                      <TableCell align="center" sx={{ verticalAlign: 'middle', py: 1.5 }}>
+                        <Box
+                          sx={{
+                            display: 'inline-block',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 4,
+                            bgcolor: statusInfo.bgcolor,
+                            color: statusInfo.text,
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          {statusInfo.label}
+                        </Box>
                       </TableCell>
 
-                      {/* Actions & Proof */}
-                      <TableCell align="center" sx={{ verticalAlign: 'top', py: 1.5 }}>
+                      {/* Proof Document & Full View */}
+                      <TableCell align="center" sx={{ verticalAlign: 'middle', py: 1.5 }}>
                         <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
-                          <Tooltip title="View Full Claim Details">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => setSelectedClaim(claim)}
-                            >
-                              <Visibility fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-
                           {hasProof ? (
-                            <Tooltip title={`${claim.attachments.length} Proof File(s)`}>
-                              <IconButton
-                                size="small"
-                                color="secondary"
-                                onClick={() => handleViewAttachment(claim.attachments[0])}
-                              >
-                                {claim.attachments[0].mimeType?.includes('pdf') ? (
-                                  <PictureAsPdf fontSize="small" />
-                                ) : (
-                                  <ImageIcon fontSize="small" />
-                                )}
-                              </IconButton>
-                            </Tooltip>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                              startIcon={claim.attachments[0].mimeType?.includes('pdf') ? <PictureAsPdf /> : <ImageIcon />}
+                              onClick={() => handleViewAttachment(claim.attachments[0])}
+                              sx={{ textTransform: 'none', py: 0.25, px: 1, fontSize: '0.75rem', borderRadius: 1.5 }}
+                            >
+                              Proof
+                            </Button>
                           ) : (
-                            <Tooltip title="No Proof Attached">
-                              <span>
-                                <IconButton size="small" disabled>
-                                  <InsertDriveFile fontSize="small" sx={{ opacity: 0.3 }} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
+                            <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                              No proof
+                            </Typography>
                           )}
+
+                          <IconButton
+                            size="small"
+                            color="info"
+                            title="View Full Claim Info"
+                            onClick={() => setSelectedClaim(claim)}
+                          >
+                            <Visibility fontSize="small" />
+                          </IconButton>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -752,7 +681,7 @@ const AllClaimsAdmin = () => {
           </Table>
         </TableContainer>
 
-        {/* Pagination Bar */}
+        {/* Pagination */}
         <TablePagination
           rowsPerPageOptions={[10, 25, 50, 100]}
           component="div"
@@ -767,20 +696,17 @@ const AllClaimsAdmin = () => {
         />
       </Paper>
 
-      {/* Claim Full Detail Dialog */}
+      {/* 5. Claim Details Modal (Clean & Easy to Understand) */}
       <Dialog
         open={Boolean(selectedClaim)}
         onClose={() => setSelectedClaim(null)}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Assignment color="primary" />
-            <Typography variant="h6" fontWeight={700}>
-              Claim Details — {selectedClaim?.claimRef}
-            </Typography>
-          </Box>
+          <Typography variant="subtitle1" fontWeight={700}>
+            Claim Details: {selectedClaim?.claimRef}
+          </Typography>
           <IconButton onClick={() => setSelectedClaim(null)} size="small">
             <Close />
           </IconButton>
@@ -788,213 +714,84 @@ const AllClaimsAdmin = () => {
 
         <DialogContent dividers>
           {selectedClaim && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-              {/* Student Header Summary */}
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: '#F8FAFC' }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">
-                      Student Name:
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {selectedClaim.studentName}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">
-                      Admission No:
-                    </Typography>
-                    <Typography variant="body1" fontWeight={600}>
-                      {selectedClaim.admissionNo}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">
-                      KTU Reg No:
-                    </Typography>
-                    <Typography variant="body1" fontWeight={600}>
-                      {selectedClaim.ktuRegisterNo || '—'}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">
-                      Department:
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {selectedClaim.departmentCode} — {selectedClaim.departmentName}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">
-                      Class / Batch:
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {selectedClaim.className} ({selectedClaim.batchName || '—'})
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">
-                      Semester:
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {selectedClaim.semester || '—'}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">
-                      Current Status:
-                    </Typography>
-                    <Box sx={{ mt: 0.5 }}>
-                      <Chip
-                        label={selectedClaim.status}
-                        size="small"
-                        color={STATUS_CONFIG[selectedClaim.status]?.color || 'default'}
-                        sx={{ fontWeight: 700 }}
-                      />
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Paper>
-
-              {/* Activity Classification */}
-              <Box>
-                <Typography variant="subtitle2" fontWeight={700} color="primary" gutterBottom>
-                  Activity Catalogue Classification
+            <Stack spacing={2.5}>
+              {/* Student Summary */}
+              <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: 2 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                  STUDENT
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">Activity Group:</Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {selectedClaim.activityGroupCode} — {selectedClaim.activityGroupName}
-                    </Typography>
-                  </Grid>
+                <Typography variant="subtitle1" fontWeight={800} color="#0F172A">
+                  {selectedClaim.studentName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Admission No: <strong>{selectedClaim.admissionNo}</strong>
+                  {selectedClaim.ktuRegisterNo && ` • KTU Reg: ${selectedClaim.ktuRegisterNo}`}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Department: <strong>{selectedClaim.departmentCode}</strong> • Class: <strong>{selectedClaim.className}</strong>
+                </Typography>
+              </Box>
 
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">Major Category (Head):</Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {selectedClaim.activityHeadCode} — {selectedClaim.activityHeadName}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">Sub-Activity Item:</Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {selectedClaim.activityItemCode} — {selectedClaim.activityItemTitle}
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">Claimable Option / Tier:</Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {selectedClaim.activityOptionLabel}
-                    </Typography>
-                  </Grid>
-                </Grid>
+              {/* Activity Info */}
+              <Box>
+                <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                  ACTIVITY
+                </Typography>
+                <Typography variant="body1" fontWeight={700} color="#1E293B">
+                  {selectedClaim.activityItemCode} — {selectedClaim.activityItemTitle || selectedClaim.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Option: {selectedClaim.activityOptionLabel || '—'}
+                </Typography>
+                {selectedClaim.title && selectedClaim.title !== selectedClaim.activityItemTitle && (
+                  <Typography variant="body2" color="primary.main" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                    "{selectedClaim.title}"
+                  </Typography>
+                )}
               </Box>
 
               <Divider />
 
-              {/* Event / Achievement Details */}
-              <Box>
-                <Typography variant="subtitle2" fontWeight={700} color="primary" gutterBottom>
-                  Event / Achievement Specifics
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="caption" color="text.secondary">Event Title / Description:</Typography>
-                    <Typography variant="body1" fontWeight={600}>
-                      {selectedClaim.title || '—'}
-                    </Typography>
-                  </Grid>
-
-                  {selectedClaim.organisation && (
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" color="text.secondary">Host Organisation:</Typography>
-                      <Typography variant="body2">{selectedClaim.organisation}</Typography>
-                    </Grid>
-                  )}
-
-                  {selectedClaim.venue && (
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" color="text.secondary">Venue:</Typography>
-                      <Typography variant="body2">{selectedClaim.venue}</Typography>
-                    </Grid>
-                  )}
-
-                  <Grid item xs={6} sm={4}>
-                    <Typography variant="caption" color="text.secondary">Activity Date From:</Typography>
-                    <Typography variant="body2">{formatDate(selectedClaim.activityDateFrom)}</Typography>
-                  </Grid>
-
-                  {selectedClaim.activityDateTo && (
-                    <Grid item xs={6} sm={4}>
-                      <Typography variant="caption" color="text.secondary">Activity Date To:</Typography>
-                      <Typography variant="body2">{formatDate(selectedClaim.activityDateTo)}</Typography>
-                    </Grid>
-                  )}
-
-                  <Grid item xs={6} sm={4}>
-                    <Typography variant="caption" color="text.secondary">Quantity / Hours / Count:</Typography>
-                    <Typography variant="body2" fontWeight={600}>{selectedClaim.quantity || 1}</Typography>
-                  </Grid>
-
-                  {selectedClaim.description && (
-                    <Grid item xs={12}>
-                      <Typography variant="caption" color="text.secondary">Student Remarks:</Typography>
-                      <Typography variant="body2" sx={{ bgcolor: '#FFFDE7', p: 1.5, borderRadius: 1 }}>
-                        {selectedClaim.description}
-                      </Typography>
-                    </Grid>
-                  )}
+              {/* Points & Status */}
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary">Claimed Points:</Typography>
+                  <Typography variant="h6" fontWeight={800} color="#0284C7">
+                    {selectedClaim.claimedPoints} Points
+                  </Typography>
                 </Grid>
-              </Box>
-
-              <Divider />
-
-              {/* Points & Review Details */}
-              <Box>
-                <Typography variant="subtitle2" fontWeight={700} color="primary" gutterBottom>
-                  Scoring & Review Outcome
-                </Typography>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">Claimed Points:</Typography>
-                    <Typography variant="h6" fontWeight={700} color="primary.main">
-                      {selectedClaim.claimedPoints} pts
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="caption" color="text.secondary">Awarded Points:</Typography>
-                    <Typography variant="h6" fontWeight={700} color="success.main">
-                      {selectedClaim.awardedPoints} pts
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">Review Remarks:</Typography>
-                    <Typography variant="body2" sx={{ fontStyle: selectedClaim.reviewRemarks ? 'normal' : 'italic', color: 'text.secondary' }}>
-                      {selectedClaim.reviewRemarks || 'No review remarks recorded yet.'}
-                    </Typography>
-                  </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary">Status:</Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <Chip
+                      label={selectedClaim.status}
+                      size="small"
+                      color={STATUS_CONFIG[selectedClaim.status]?.color || 'default'}
+                      sx={{ fontWeight: 700 }}
+                    />
+                  </Box>
                 </Grid>
-              </Box>
+              </Grid>
 
-              <Divider />
+              {/* Review Remarks if any */}
+              {selectedClaim.reviewRemarks && (
+                <Box sx={{ p: 1.5, bgcolor: '#FEF9C3', borderRadius: 1.5, border: '1px solid #FEF08A' }}>
+                  <Typography variant="caption" fontWeight={700} color="#854D0E">
+                    Staff Review Remarks:
+                  </Typography>
+                  <Typography variant="body2" color="#713F12">
+                    {selectedClaim.reviewRemarks}
+                  </Typography>
+                </Box>
+              )}
 
-              {/* Attachments Section */}
+              {/* Proof Attachment */}
               <Box>
-                <Typography variant="subtitle2" fontWeight={700} color="primary" gutterBottom>
-                  Evidence Documents ({selectedClaim.attachments?.length || 0})
+                <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                  ATTACHED PROOF CERTIFICATES
                 </Typography>
                 {selectedClaim.attachments && selectedClaim.attachments.length > 0 ? (
-                  <Stack spacing={1}>
+                  <Stack spacing={1} sx={{ mt: 1 }}>
                     {selectedClaim.attachments.map((att) => (
                       <Paper
                         key={att._id}
@@ -1003,64 +800,57 @@ const AllClaimsAdmin = () => {
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {att.mimeType?.includes('pdf') ? (
-                            <PictureAsPdf color="error" />
+                            <PictureAsPdf color="error" fontSize="small" />
                           ) : (
-                            <ImageIcon color="primary" />
+                            <ImageIcon color="primary" fontSize="small" />
                           )}
-                          <Box>
-                            <Typography variant="body2" fontWeight={600}>
-                              {att.originalFilename}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {(att.sizeBytes / 1024).toFixed(1)} KB
-                            </Typography>
-                          </Box>
+                          <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 260 }}>
+                            {att.originalFilename}
+                          </Typography>
                         </Box>
                         <Button
-                          variant="outlined"
                           size="small"
-                          startIcon={<Visibility />}
+                          variant="outlined"
                           onClick={() => handleViewAttachment(att)}
-                          disabled={isFetchingUrl}
                         >
-                          View Document
+                          View
                         </Button>
                       </Paper>
                     ))}
                   </Stack>
                 ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No evidence proof documents attached to this claim.
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    No proof certificate attached to this claim.
                   </Typography>
                 )}
               </Box>
-            </Box>
+            </Stack>
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setSelectedClaim(null)} variant="contained">
+        <DialogActions sx={{ p: 1.5 }}>
+          <Button onClick={() => setSelectedClaim(null)} variant="contained" fullWidth size="small">
             Close
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Proof Document Viewer Dialog */}
+      {/* 6. Proof Preview Dialog */}
       <Dialog
         open={viewerOpen}
         onClose={() => setViewerOpen(false)}
-        maxWidth="lg"
+        maxWidth="md"
         fullWidth
       >
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="subtitle1" fontWeight={700}>
+        <DialogTitle sx={{ m: 0, p: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ maxWidth: '80%' }}>
             {viewerTitle}
           </Typography>
           <IconButton onClick={() => setViewerOpen(false)} size="small">
             <Close />
           </IconButton>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 0, height: '75vh', display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#0F172A' }}>
+        <DialogContent dividers sx={{ p: 0, height: '70vh', display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#0F172A' }}>
           {viewerUrl && viewerType.includes('pdf') ? (
             <iframe
               src={viewerUrl}
@@ -1079,21 +869,21 @@ const AllClaimsAdmin = () => {
             <CircularProgress />
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 1.5 }}>
+        <DialogActions sx={{ p: 1 }}>
           {viewerUrl && (
             <Button
-              variant="outlined"
               size="small"
               component="a"
               href={viewerUrl}
               target="_blank"
               rel="noopener noreferrer"
+              startIcon={<OpenInNew />}
             >
-              Open in New Tab
+              Open in New Window
             </Button>
           )}
-          <Button onClick={() => setViewerOpen(false)} variant="contained" size="small">
-            Close Preview
+          <Button onClick={() => setViewerOpen(false)} size="small" variant="contained">
+            Close
           </Button>
         </DialogActions>
       </Dialog>
