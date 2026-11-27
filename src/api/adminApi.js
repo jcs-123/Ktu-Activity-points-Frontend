@@ -130,6 +130,21 @@ export const adminApi = createApi({
       }),
       providesTags: ['AdminAuditLogs'],
     }),
+    deleteAuditLog: builder.mutation({
+      query: (id) => ({
+        url: `/audit-log/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['AdminAuditLogs'],
+    }),
+    clearAuditLogs: builder.mutation({
+      query: (body) => ({
+        url: '/audit-log',
+        method: 'DELETE',
+        body,
+      }),
+      invalidatesTags: ['AdminAuditLogs'],
+    }),
     recomputeScores: builder.mutation({
       query: (body) => ({
         url: '/scores/recompute',
@@ -179,6 +194,8 @@ export const {
   useGetSettingsQuery,
   useUpdateSettingsMutation,
   useGetAuditLogsQuery,
+  useDeleteAuditLogMutation,
+  useClearAuditLogsMutation,
   useRecomputeScoresMutation,
   useUpdateHeadMutation,
   useUpdateItemMutation,

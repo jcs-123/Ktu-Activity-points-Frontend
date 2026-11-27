@@ -4,10 +4,18 @@ import {
   TableContainer, TableHead, TableRow, TablePagination,
   TextField, MenuItem, Select, FormControl, InputLabel,
   Chip, CircularProgress, Alert, Button, Dialog, DialogTitle,
-  DialogContent, DialogActions, Grid, Card, CardContent, Divider
+  DialogContent, DialogActions, Grid, Divider, IconButton,
+  RadioGroup, FormControlLabel, Radio, Snackbar
 } from '@mui/material';
-import { History, FilterList, Refresh, Visibility, Security } from '@mui/icons-material';
-import { useGetAuditLogsQuery, useRecomputeScoresMutation } from '../../api/adminApi';
+import {
+  History, FilterList, Refresh, Visibility, Delete, DeleteSweep, WarningAmber
+} from '@mui/icons-material';
+import {
+  useGetAuditLogsQuery,
+  useRecomputeScoresMutation,
+  useDeleteAuditLogMutation,
+  useClearAuditLogsMutation
+} from '../../api/adminApi';
 
 const ACTION_COLORS = {
   CLAIM_APPROVED: 'success',
@@ -27,7 +35,15 @@ const AuditLogView = () => {
   const [actionFilter, setActionFilter] = useState('');
   const [selectedLog, setSelectedLog] = useState(null);
 
-  // Recompute scores trigger
+  // Delete state
+  const [logToDelete, setLogToDelete] = useState(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearScope, setClearScope] = useState('ALL'); // 'ALL' | 'FILTERED' | '30DAYS'
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // Mutations
+  const [deleteAuditLog, { isLoading: isDeleting }] = useDeleteAuditLogMutation();
+  const [clearAuditLogs, { isLoading: isClearing }] = useClearAuditLogsMutation();
   const [recomputeScores, { isLoading: isRecomputing, isSuccess: recomputeSuccess }] = useRecomputeScoresMutation();
 
   const queryParams = {
@@ -62,6 +78,36 @@ const AuditLogView = () => {
     }
   };
 
+  const handleDeleteSingle = async () => {
+    if (!logToDelete) return;
+    try {
+      await deleteAuditLog(logToDelete._id).unwrap();
+      setSnackbar({ open: true, message: 'Audit log entry deleted successfully.', severity: 'success' });
+      setLogToDelete(null);
+    } catch (err) {
+      console.error(err);
+      setSnackbar({ open: true, message: err?.data?.error?.message || 'Failed to delete audit log entry.', severity: 'error' });
+    }
+  };
+
+  const handleClearLogs = async () => {
+    try {
+      const payload = {};
+      if (clearScope === 'FILTERED') {
+        if (entityTypeFilter) payload.entityType = entityTypeFilter;
+        if (actionFilter) payload.action = actionFilter;
+      } else if (clearScope === '30DAYS') {
+        payload.olderThanDays = 30;
+      }
+      const res = await clearAuditLogs(payload).unwrap();
+      setSnackbar({ open: true, message: res.message || 'Audit logs cleared successfully.', severity: 'success' });
+      setClearDialogOpen(false);
+    } catch (err) {
+      console.error(err);
+      setSnackbar({ open: true, message: err?.data?.error?.message || 'Failed to clear audit logs.', severity: 'error' });
+    }
+  };
+
   return (
     <Box sx={{ p: { xs: 1.5, sm: 3 }, maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
@@ -73,7 +119,7 @@ const AuditLogView = () => {
               System Audit Logs
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Immutable forensic trail of all state transitions, approvals, logins, and configurations (FR-I-01 to FR-I-05).
+              Forensic trail of all state transitions, approvals, logins, and configurations.
             </Typography>
           </Box>
         </Box>
@@ -85,6 +131,15 @@ const AuditLogView = () => {
             onClick={() => refetch()}
           >
             Refresh
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteSweep />}
+            onClick={() => setClearDialogOpen(true)}
+            disabled={logs.length === 0}
+          >
+            Clear Logs
           </Button>
           <Button
             variant="contained"
@@ -187,7 +242,7 @@ const AuditLogView = () => {
                     <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Action</TableCell>
                     <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Entity Type</TableCell>
                     <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>IP Address</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Details</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -227,13 +282,24 @@ const AuditLogView = () => {
                           {log.ipAddress || '—'}
                         </TableCell>
                         <TableCell align="center">
-                          <Button
-                            size="small"
-                            startIcon={<Visibility />}
-                            onClick={() => setSelectedLog(log)}
-                          >
-                            View
-                          </Button>
+                          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              title="View Details"
+                              onClick={() => setSelectedLog(log)}
+                            >
+                              <Visibility fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              title="Delete Entry"
+                              onClick={() => setLogToDelete(log)}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))
@@ -316,6 +382,130 @@ const AuditLogView = () => {
           <Button onClick={() => setSelectedLog(null)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Single Entry Confirmation Dialog */}
+      <Dialog
+        open={Boolean(logToDelete)}
+        onClose={() => setLogToDelete(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
+          <WarningAmber color="error" /> Delete Audit Log Entry
+        </DialogTitle>
+        <DialogContent dividers>
+          {logToDelete && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Typography variant="body2">
+                Are you sure you want to delete this audit log entry? This action cannot be undone.
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 1.5, bgcolor: '#FFF9F9', borderRadius: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">Action:</Typography>
+                <Typography variant="body2" fontWeight="bold">{logToDelete.action}</Typography>
+                <Typography variant="caption" color="text.secondary">Timestamp:</Typography>
+                <Typography variant="body2">{new Date(logToDelete.createdAt).toLocaleString()}</Typography>
+                <Typography variant="caption" color="text.secondary">Actor:</Typography>
+                <Typography variant="body2">{logToDelete.actor?.fullName || 'System'} ({logToDelete.actor?.username || ''})</Typography>
+              </Paper>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLogToDelete(null)} disabled={isDeleting}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteSingle}
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={16} /> : <Delete />}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Clear Logs Dialog */}
+      <Dialog
+        open={clearDialogOpen}
+        onClose={() => setClearDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
+          <DeleteSweep color="error" /> Clear System Audit Logs
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Choose which audit log records you want to delete:
+          </Typography>
+          <RadioGroup value={clearScope} onChange={(e) => setClearScope(e.target.value)}>
+            <FormControlLabel
+              value="ALL"
+              control={<Radio color="error" />}
+              label={
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">Delete All Audit Logs</Typography>
+                  <Typography variant="caption" color="text.secondary">Permanently remove all audit history.</Typography>
+                </Box>
+              }
+              sx={{ mb: 1.5 }}
+            />
+            {(entityTypeFilter || actionFilter) && (
+              <FormControlLabel
+                value="FILTERED"
+                control={<Radio color="error" />}
+                label={
+                  <Box>
+                    <Typography variant="body2" fontWeight="bold">Delete Filtered Logs Only</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Delete logs matching: {entityTypeFilter ? `Entity: ${entityTypeFilter} ` : ''}{actionFilter ? `Action: ${actionFilter}` : ''}
+                    </Typography>
+                  </Box>
+                }
+                sx={{ mb: 1.5 }}
+              />
+            )}
+            <FormControlLabel
+              value="30DAYS"
+              control={<Radio color="error" />}
+              label={
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">Delete Logs Older Than 30 Days</Typography>
+                  <Typography variant="caption" color="text.secondary">Retain recent logs and clear old history.</Typography>
+                </Box>
+              }
+            />
+          </RadioGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClearDialogOpen(false)} disabled={isClearing}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleClearLogs}
+            disabled={isClearing}
+            startIcon={isClearing ? <CircularProgress size={16} /> : <DeleteSweep />}
+          >
+            {isClearing ? 'Clearing...' : 'Confirm Clear'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%', borderRadius: 2 }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
