@@ -60,11 +60,20 @@ const ReviewStep = () => {
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
             <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
               <Typography variant="body2" color="textSecondary">Selected Activity</Typography>
-              <Typography variant="body1">{catalogueItem.title}</Typography>
+              <Typography variant="body1" fontWeight="600">
+                {catalogueItem.itemCode ? `${catalogueItem.itemCode} — ` : ''}{catalogueItem.title}
+              </Typography>
+              {catalogueItem.headName && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  {catalogueItem.headName} {catalogueItem.headMaxPoints ? `(Category Cap: ${catalogueItem.headMaxPoints} pts)` : ''}
+                </Typography>
+              )}
             </Box>
             <Box>
-              <Typography variant="body2" color="textSecondary">Maximum Points</Typography>
-              <Typography variant="body1">{catalogueItem.maxPoints}</Typography>
+              <Typography variant="body2" color="textSecondary">Points Claimed / Allowed</Typography>
+              <Typography variant="body1" fontWeight="bold" color="primary">
+                {details.pointsClaimed || catalogueItem.points || catalogueItem.maxPoints} Points
+              </Typography>
             </Box>
           </Box>
         ) : (

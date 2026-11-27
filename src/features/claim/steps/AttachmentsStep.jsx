@@ -13,7 +13,7 @@ import { useUploadAttachmentMutation, useRemoveAttachmentMutation } from '../../
 
 const AttachmentsStep = () => {
   const dispatch = useDispatch();
-  const { attachments, claimId } = useSelector((state) => state.claimWizard);
+  const { attachments, claimId, catalogueItem } = useSelector((state) => state.claimWizard);
   const [errorMsg, setErrorMsg] = useState('');
   const [duplicateAlert, setDuplicateAlert] = useState(false);
 
@@ -91,6 +91,22 @@ const AttachmentsStep = () => {
       {duplicateAlert && (
         <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ mb: 2, borderRadius: 2 }}>
           <strong>Duplicate Warning:</strong> One of your files matches an already uploaded certificate. A warning flag has been raised for the review staff.
+        </Alert>
+      )}
+
+      {catalogueItem?.evidenceText && (
+        <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+          <Typography variant="subtitle2" fontWeight="bold">
+            Required Documentary Proof (KTU 2024 Scheme):
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 0.5 }}>
+            {catalogueItem.evidenceText}
+          </Typography>
+          {catalogueItem.remarks && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              Note: {catalogueItem.remarks}
+            </Typography>
+          )}
         </Alert>
       )}
 
