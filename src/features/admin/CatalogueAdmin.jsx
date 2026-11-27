@@ -21,6 +21,7 @@ import {
   useUpdateItemMutation,
   useUpdateOptionMutation
 } from '../../api/adminApi';
+import { ITEM_MAX_POINTS, formatGroupTitle } from '../../utils/catalogueConstants';
 
 const CatalogueAdmin = () => {
   const dispatch = useDispatch();
@@ -62,6 +63,7 @@ const CatalogueAdmin = () => {
         title: editItemModal.title,
         evidenceText: editItemModal.evidenceText,
         remarks: editItemModal.remarks,
+        maxPoints: editItemModal.maxPoints !== undefined && editItemModal.maxPoints !== '' ? Number(editItemModal.maxPoints) : undefined,
       }).unwrap();
       dispatch(catalogueApi.util.invalidateTags(['Catalogue']));
       setEditItemModal(null);
@@ -112,7 +114,7 @@ const CatalogueAdmin = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                 <Folder color="primary" sx={{ fontSize: 28, flexShrink: 0 }} />
                 <Typography variant="h6" fontWeight={700} sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-                  Group {group.code} — {group.name}
+                  {formatGroupTitle(group)}
                 </Typography>
               </Box>
 
@@ -188,6 +190,14 @@ const CatalogueAdmin = () => {
                 value={editItemModal.title}
                 onChange={(e) => setEditItemModal({ ...editItemModal, title: e.target.value })}
                 fullWidth
+              />
+              <TextField
+                label="Maximum Points Cap (maxPoints)"
+                type="number"
+                value={editItemModal.maxPoints !== undefined && editItemModal.maxPoints !== null ? editItemModal.maxPoints : (ITEM_MAX_POINTS[editItemModal.code] || 40)}
+                onChange={(e) => setEditItemModal({ ...editItemModal, maxPoints: e.target.value })}
+                fullWidth
+                helperText="Maximum points a student can claim for this sub-activity item (Table 2 Regulations)"
               />
               <TextField
                 label="Handbook Evidence Requirement Text"
@@ -293,27 +303,47 @@ const ItemsGroup = ({ headId, onEditItem, onEditOption }) => {
 
   return (
     <Box sx={{ pl: { xs: 0, sm: 2 }, display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {items.map((item) => (
-        <Paper key={item._id} variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#F8FAFC' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-              <Extension fontSize="small" color="secondary" sx={{ flexShrink: 0 }} />
-              <Typography variant="subtitle2" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>{item.code} — {item.title}</Typography>
+      {items.map((item) => {
+        const itemCap = item.maxPoints !== undefined && item.maxPoints !== null ? item.maxPoints : (ITEM_MAX_POINTS[item.code] || 40);
+        return (
+          <Paper key={item._id} variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#F8FAFC' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: '1 1 200px' }}>
+                <Extension fontSize="small" color="secondary" sx={{ flexShrink: 0 }} />
+                <Typography variant="subtitle2" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
+                  {item.code} — {item.title}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                <Chip
+                  label={`Max Cap: ${itemCap} pts`}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    borderColor: '#1976d2',
+                    color: '#1565c0',
+                    bgcolor: 'rgba(25, 118, 210, 0.06)',
+                  }}
+                />
+                <IconButton size="small" sx={{ flexShrink: 0 }} onClick={() => onEditItem(item)} title="Edit Activity Handbook Item">
+                  <Edit fontSize="small" />
+                </IconButton>
+              </Box>
             </Box>
-            <IconButton size="small" sx={{ flexShrink: 0 }} onClick={() => onEditItem(item)}>
-              <Edit fontSize="small" />
-            </IconButton>
-          </Box>
 
-          {item.evidenceText && (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, overflowWrap: 'anywhere' }}>
-              <strong>Evidence Requirement:</strong> {item.evidenceText}
-            </Typography>
-          )}
+            {item.evidenceText && (
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, overflowWrap: 'anywhere' }}>
+                <strong>Evidence Requirement:</strong> {item.evidenceText}
+              </Typography>
+            )}
 
-          <OptionsList itemId={item._id} onEditOption={onEditOption} />
-        </Paper>
-      ))}
+            <OptionsList itemId={item._id} onEditOption={onEditOption} />
+          </Paper>
+        );
+      })}
     </Box>
   );
 };
