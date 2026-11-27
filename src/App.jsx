@@ -35,6 +35,7 @@ const NotificationList = lazy(() => import('./features/notification/Notification
 const SemesterConfig = lazy(() => import('./features/admin/SemesterConfig'));
 const AuditLogView = lazy(() => import('./features/admin/AuditLogView'));
 const CatalogueAdmin = lazy(() => import('./features/admin/CatalogueAdmin'));
+const AllClaimsAdmin = lazy(() => import('./features/admin/AllClaimsAdmin'));
 
 const PageLoader = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -79,6 +80,7 @@ function App() {
                   <Route path="/analytics" element={<AnalyticsPage />} />
 
                   {/* Admin */}
+                  <Route path="/admin/claims" element={<AllClaimsAdmin />} />
                   <Route path="/admin/catalogue" element={<CatalogueAdmin />} />
                   <Route path="/admin/users" element={<UserAdmin />} />
                   <Route path="/admin/semesters" element={<SemesterConfig />} />

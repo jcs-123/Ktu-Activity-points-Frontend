@@ -55,6 +55,7 @@ const getNavItems = (roles = []) => {
     items.push(
       { divider: true, label: 'Executive Oversight' },
       { label: 'Executive Dashboard', icon: <School />, path: '/principal/dashboard' },
+      { label: 'All Submitted Claims', icon: <Assignment />, path: '/admin/claims' },
       { label: 'Deficiency Report', icon: <Warning />, path: '/reports/deficiency' },
       { label: 'Leaderboard', icon: <Leaderboard />, path: '/leaderboard' },
     );
@@ -80,6 +81,7 @@ const getNavItems = (roles = []) => {
   if (roles.includes('ADMIN')) {
     items.push(
       { divider: true, label: 'Administration' },
+      { label: 'All Submitted Claims', icon: <Assignment />, path: '/admin/claims' },
       { label: 'Users', icon: <People />, path: '/admin/users' },
       { label: 'Catalogue', icon: <AdminPanelSettings />, path: '/admin/catalogue' },
       { label: 'Semesters', icon: <CalendarMonth />, path: '/admin/semesters' },

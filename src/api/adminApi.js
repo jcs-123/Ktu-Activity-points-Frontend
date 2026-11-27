@@ -18,7 +18,7 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['AdminUsers', 'AdminClasses', 'AdminDepartments', 'AdminBatches', 'AdminSemesters', 'AdminSettings'],
+  tagTypes: ['AdminUsers', 'AdminClasses', 'AdminDepartments', 'AdminBatches', 'AdminSemesters', 'AdminSettings', 'AdminAuditLogs', 'AdminClaims'],
   endpoints: (builder) => ({
     getUsers: builder.query({
       query: (params) => ({
@@ -173,6 +173,13 @@ export const adminApi = createApi({
         body,
       }),
     }),
+    getAllClaims: builder.query({
+      query: (params) => ({
+        url: '/claims',
+        params,
+      }),
+      providesTags: ['AdminClaims'],
+    }),
   }),
 });
 
@@ -200,4 +207,6 @@ export const {
   useUpdateHeadMutation,
   useUpdateItemMutation,
   useUpdateOptionMutation,
+  useGetAllClaimsQuery,
+  useLazyGetAllClaimsQuery,
 } = adminApi;
