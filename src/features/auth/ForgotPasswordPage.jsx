@@ -45,20 +45,20 @@ const ForgotPasswordPage = () => {
       )}
 
       {responseInfo && (
-        <Alert severity={responseInfo.emailConfigured === false && !responseInfo.devResetUrl ? 'info' : 'success'} sx={{ mb: 2 }}>
-          <Typography variant="body2">{responseInfo.message}</Typography>
+        <Alert severity={responseInfo.devResetToken ? 'success' : responseInfo.emailConfigured === false ? 'info' : 'success'} sx={{ mb: 2 }}>
+          <Typography variant="body2" fontWeight={500}>{responseInfo.message}</Typography>
           {responseInfo.devResetToken && (
             <Box sx={{ mt: 1.5 }}>
-              <Typography variant="caption" display="block" color="text.secondary" sx={{ mb: 1 }}>
-                Development mode reset link generated:
-              </Typography>
               <Button
-                size="small"
-                variant="outlined"
+                fullWidth
+                size="medium"
+                variant="contained"
+                color="primary"
                 startIcon={<KeyIcon />}
                 onClick={() => navigate(`/reset-password?token=${encodeURIComponent(responseInfo.devResetToken)}`)}
+                sx={{ fontWeight: 700, textTransform: 'none', py: 1 }}
               >
-                Continue to Reset Password
+                Continue to Set New Password
               </Button>
             </Box>
           )}

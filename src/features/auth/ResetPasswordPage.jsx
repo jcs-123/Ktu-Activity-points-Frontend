@@ -42,8 +42,8 @@ const ResetPasswordPage = () => {
       return;
     }
 
-    if (formData.newPassword.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    if (formData.newPassword.length < 4) {
+      setError('Password must be at least 4 characters long.');
       return;
     }
 
@@ -67,7 +67,7 @@ const ResetPasswordPage = () => {
   return (
     <AuthCardLayout
       title="Set New Password"
-      subtitle="Enter your reset token and choose a new password (minimum 8 characters)."
+      subtitle="Enter your reset token and choose a new password (minimum 4 characters)."
     >
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
